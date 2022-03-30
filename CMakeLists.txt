@@ -5,6 +5,7 @@ set(CMAKE_C_STANDARD 11)
 
 include_directories(.)
 
-add_executable(C_Socket
-        main.c
-        main.h)
+add_executable(
+        C_Socket
+        src/main.c include/main.h
+        src/client.c include/client.h src/server.c include/server.h src/configuration.c include/configuration.h src/subroutines.c include/subroutines.h src/keyValueStore.c include/keyValueStore.h)
