@@ -3,8 +3,8 @@
 #include "include/configuration.h"
 
 #include "netinet/in.h"
-#include<sys/socket.h>
-#include<unistd.h>
+#include <sys/socket.h>
+#include <unistd.h>
 
 struct sockaddr_in serverAddress;
 int serverSocket;
@@ -13,7 +13,7 @@ int clientAddressLength;
 struct sockaddr_in clientAddress;
 int clientSocket;
 
-int runServer() {
+int main() {
     char message[MAX_ENTRY_SIZE];
     int disconnectionStatus;
 
@@ -23,6 +23,7 @@ int runServer() {
 
     while ((disconnectionStatus = receiveCommand(message)) > 0) {
         puts(message);
+//        executeCommand(message);
         sendInputInformation();
     }
 
@@ -54,12 +55,15 @@ void acceptClientConnection() {
         puts("Connection accepted.");
 }
 
-void sendInputInformation(char * str) {
+void sendInputInformation(char* str) {
     write(clientSocket, "GET [key]\nPUT [key] [value]\nDEL [key]\nSHOW\nQUIT\nBEG\nEND\n", MAX_ENTRY_SIZE);
 }
 
-int receiveCommand(char *command) {
+int receiveCommand(char* command) {
     return recv(clientSocket, command, MAX_ENTRY_SIZE, 0);
+}
+
+void executeCommand(char* command) {
 }
 
 void showDisconnectionStatus(int status) {

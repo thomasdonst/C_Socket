@@ -10,7 +10,7 @@
 int serverSocket;
 
 
-int runClient() {
+int main() {
     int connectionStatus = connectToServerSocket();
 
     if (connectionStatus == -1){

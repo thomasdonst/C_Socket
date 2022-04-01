@@ -2,7 +2,6 @@
 #define C_SOCKET_CLIENT_H
 
 
-int runClient();
 int connectToServerSocket();
 char* receiveMessage(char *response);
 void showMessage(char *message);
