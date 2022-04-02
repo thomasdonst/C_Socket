@@ -1,5 +1,12 @@
-#ifndef C_SOCKET_MAIN_H
-#define C_SOCKET_MAIN_H
+#ifndef C_SOCKET_SERVER_H
+#define C_SOCKET_SERVER_H
+
+extern struct sockaddr_in serverAddress;
+extern int serverSocket;
+extern int clientAddressLength;
+
+extern struct sockaddr_in clientAddress;
+extern int clientSocket;
 
 void initializeServerSocket();
 void closeServerSocket();
@@ -10,4 +17,4 @@ int receiveMessage(char *message);
 void showDisconnectionStatus(int status);
 void showMessage(char *message);
 
-#endif //C_SOCKET_MAIN_H
+#endif //C_SOCKET_SERVER_H
