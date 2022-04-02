@@ -11,32 +11,52 @@ void after(void) {
 
 }
 
-void fetchCommandTest(char *message, char *expectedType, char *expectedArg1, char *expectedArg2){
-    char type[MAX_ENTRY_SIZE], arg1[MAX_ENTRY_SIZE], arg2[MAX_ENTRY_SIZE];
-    type[0] = '\0';
-    arg1[0] = '\0';
-    arg2[0] = '\0';
-
-    fetchCommand(message, type, arg1, arg2);
-    mu_assert_string_eq(expectedType, type);
-    mu_assert_string_eq(expectedArg1, arg1);
-    mu_assert_string_eq(expectedArg2, arg2);
-}
 MU_TEST(fetchCommandTests) {
-    char m[] = "";
-    fetchCommandTest(m, "", "", "");
+    Command command;
+    Command expectedCommand;
+    char message[MAX_ENTRY_SIZE];
 
-    char m2[] = "   A  B C ";
-    fetchCommandTest(m2, "A", "B", "C");
+    strcpy(message, "");
+    expectedCommand = (Command) {"", "", ""};
+    command = fetchCommand(message);
+    mu_assert_string_eq(expectedCommand.type, command.type);
+    mu_assert_string_eq(expectedCommand.key, command.key);
+    mu_assert_string_eq(expectedCommand.value, command.value);
 
-    char m3[] = "A \0 B C";
-    fetchCommandTest(m3, "A", "", "");
+    strcpy(message, " ");
+    expectedCommand = (Command) {"", "", ""};
+    command = fetchCommand(message);
+    mu_assert_string_eq(expectedCommand.type, command.type);
+    mu_assert_string_eq(expectedCommand.key, command.key);
+    mu_assert_string_eq(expectedCommand.value, command.value);
 
-    char m4[] = " AAA    B C   D";
-    fetchCommandTest(m4, "AAA", "B", "C");
+    strcpy(message, "   ");
+    expectedCommand = (Command) {"", "", ""};
+    command = fetchCommand(message);
+    mu_assert_string_eq(expectedCommand.type, command.type);
+    mu_assert_string_eq(expectedCommand.key, command.key);
+    mu_assert_string_eq(expectedCommand.value, command.value);
 
-//    char m5[] = "  ";
-//    fetchCommandTest(m5, "AAA", "B", "C");
+    strcpy(message, "  A B C ");
+    expectedCommand = (Command) {"A", "B", "C"};
+    command = fetchCommand(message);
+    mu_assert_string_eq(expectedCommand.type, command.type);
+    mu_assert_string_eq(expectedCommand.key, command.key);
+    mu_assert_string_eq(expectedCommand.value, command.value);
+
+    strcpy(message, "A \0 B C ");
+    expectedCommand = (Command) {"A", "", ""};
+    command = fetchCommand(message);
+    mu_assert_string_eq(expectedCommand.type, command.type);
+    mu_assert_string_eq(expectedCommand.key, command.key);
+    mu_assert_string_eq(expectedCommand.value, command.value);
+
+    strcpy(message, "AAA    B C  D");
+    expectedCommand = (Command) {"AAA", "B", "C"};
+    command = fetchCommand(message);
+    mu_assert_string_eq(expectedCommand.type, command.type);
+    mu_assert_string_eq(expectedCommand.key, command.key);
+    mu_assert_string_eq(expectedCommand.value, command.value);
 }
 
 

@@ -7,15 +7,8 @@ include_directories(.)
 
 add_executable(
         Server
-        src/server.c include/server.h
+        src/main.c include/main.h
         src/keyValueStore.c include/keyValueStore.h
-        src/configuration.c include/configuration.h
-        src/subroutines.c include/subroutines.h
-)
-
-add_executable(
-        Client
-        src/client.c include/client.h
         src/configuration.c include/configuration.h
         src/subroutines.c include/subroutines.h
 )
@@ -25,6 +18,10 @@ add_executable(
         include/minunit.h
         test/subroutinesTest.c
         test/minunit_example.c
+        src/keyValueStore.c include/keyValueStore.h
         src/configuration.c include/configuration.h
         src/subroutines.c include/subroutines.h
+        test/keyValueStoreTest.c
 )
+
+add_test(Test Test)
