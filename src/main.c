@@ -25,7 +25,7 @@ int main() {
         showMessage(result);
         sendMessageToClient(result);
 
-        if (strcmp((char*) command.type, "quit") == 0 || disconnectionStatus < 1)
+        if (strcmp((char *) command.type, "quit") == 0 || disconnectionStatus < 1)
             break;
     }
 

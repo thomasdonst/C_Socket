@@ -77,7 +77,7 @@ int receiveMessage(char *message) {
 
     while ((disconnectionStatus = recv(clientSocket, input, sizeof(input), 0)) > 0) {
         // Prevent buffer overflow
-        if (i > MAX_ENTRY_SIZE - 1){
+        if (i > MAX_ENTRY_SIZE - 1) {
             sprintf(message, "%s", "\r\n> Too many characters");
             sendMessageToClient(message);
             sprintf(message, "%s", "> Too many characters");
@@ -89,7 +89,7 @@ int receiveMessage(char *message) {
 
         input[1] = '\0';
         // Only symbols, letters and numbers get registered as an input
-        if (input[0] > 31 && input[0] < 127){
+        if (input[0] > 31 && input[0] < 127) {
             strcat(message, input);
             i++;
         }
