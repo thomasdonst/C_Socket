@@ -16,5 +16,6 @@ void sendInputInformation();
 int receiveMessage(char *message);
 void showDisconnectionStatus(int status);
 void showMessage(char *message);
+void showErrorMessage(char *message);
 
 #endif //C_SOCKET_SERVER_H

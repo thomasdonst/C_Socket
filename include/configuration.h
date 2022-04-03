@@ -3,5 +3,6 @@
 
 extern const int MAX_ENTRY_SIZE;
 extern const int PORT;
+extern const int NUMBER_OF_PENDING_CONNECTIONS;
 
 #endif //C_SOCKET_CONFIGURATION_H

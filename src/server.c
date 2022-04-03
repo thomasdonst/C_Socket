@@ -23,23 +23,28 @@ void initializeServerSocket() {
     serverAddress.sin_port = htons(PORT);
 
     // create server socket
-    if ((serverSocket = socket(AF_INET, SOCK_STREAM, 0)) == 0) { // SOCK_STREAM = TCP; SOCK_DGRAM = UDP
-        perror("Server socket can not be initialized");
+    if ((serverSocket = socket(AF_INET, SOCK_STREAM, 0)) == 0) { // SOCK_STREAM = TCP
+        showErrorMessage("Server socket can not be initialized");
         exit(EXIT_FAILURE);
     }
 
     // The purpose of this is to allow to reuse the port even if the process crash or been killed
-    if (setsockopt(serverSocket, SOL_SOCKET, SO_REUSEADDR, &(int) {1}, sizeof(int)) < 0)
-        perror("setsockopt(SO_REUSEADDR) failed");
-
-    // bind server socket to localhost port 5678
-    if (bind(serverSocket, (struct sockaddr *) &serverAddress, sizeof(serverAddress))) {
-        perror("Server socket bind failed.");
+    if (setsockopt(serverSocket, SOL_SOCKET, SO_REUSEADDR, &(int) {1}, sizeof(int)) < 0) {
+        showErrorMessage("setsockopt(SO_REUSEADDR) failed");
         exit(EXIT_FAILURE);
     }
 
-    // try to specify maximum of 5 pending connections for server socket
-    listen(serverSocket, 5);
+    // bind server socket to ip address and port
+    if (bind(serverSocket, (struct sockaddr *) &serverAddress, sizeof(serverAddress))) {
+        showErrorMessage("Server socket bind failed");
+        exit(EXIT_FAILURE);
+    }
+
+    // try to specify maximum of X pending connections for server socket
+    if (listen(serverSocket, NUMBER_OF_PENDING_CONNECTIONS) != 0) {
+        showErrorMessage("Server socket can not listen");
+        exit(EXIT_FAILURE);
+    }
 
     // show notification
     char info[255];
@@ -49,12 +54,10 @@ void initializeServerSocket() {
 }
 
 void acceptClientConnection() {
-    clientSocket = accept(serverSocket, &clientAddress, &clientAddressLength);
+    if ((clientSocket = accept(serverSocket, &clientAddress, &clientAddressLength)) < 0)
+        showMessage("Client could not be accepted");
 
-    if (clientSocket < 0)
-        perror("Client could not be accepted");
-    else
-        puts("Client accepted");
+    showMessage("Client accepted");
 }
 
 void sendMessageToClient(char *message) {
@@ -64,8 +67,7 @@ void sendMessageToClient(char *message) {
 }
 
 void sendInputInformation() {
-    char message[] = "GET [key]\r\nPUT [key] [value]\r\nDEL [key]\r\nSHOW\r\nQUIT\r\n";
-    sendMessageToClient(message);
+    sendMessageToClient("GET [key]\r\nPUT [key] [value]\r\nDEL [key]\r\nSHOW\r\nQUIT\r\n");
 }
 
 int receiveMessage(char *message) {
@@ -99,21 +101,25 @@ int receiveMessage(char *message) {
 void showDisconnectionStatus(int status) {
     switch (status) {
         case 0:
-            puts("Client disconnected");
+            showMessage("Client disconnected");
             break;
         case 1:
-            perror("Receive failed");
+            showErrorMessage("Receive failed");
             break;
         case 2:
-            perror("Session closed");
+            showErrorMessage("Session closed");
             break;
         default:
-            perror("Connection lost");
+            showErrorMessage("Connection lost");
     }
 }
 
 void showMessage(char *message) {
     puts(message);
+}
+
+void showErrorMessage(char *message) {
+    perror(message);
 }
 
 void closeServerSocket() {
