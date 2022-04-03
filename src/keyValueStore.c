@@ -10,22 +10,22 @@ int storageItemCount = 0;
 
 void get(char *key, char *result) {
     if (isAlphanumeric(key) == 0) {
-        sprintf(result, "Not an alphanumeric value");
+        sprintf(result, "> Not an alphanumeric value");
         return;
     }
 
     for (int i = 0; i < storageSize; i++) {
         if (strcmp(storage[i].key, key) == 0) {
-            sprintf(result, "GET:%s:%s", key, storage[i].value);
+            sprintf(result, "> GET:%s:%s", key, storage[i].value);
             return;
         }
     }
-    sprintf(result, "GET:%s:key_nonexistent", key);
+    sprintf(result, "> GET:%s:key_nonexistent", key);
 }
 
 void put(char *key, char *value, char *result) {
     if (isAlphanumeric(key) == 0 || isAlphanumeric(value) == 0) {
-        sprintf(result, "Not an alphanumeric value");
+        sprintf(result, "> Not an alphanumeric value");
         return;
     }
 
@@ -34,7 +34,7 @@ void put(char *key, char *value, char *result) {
         if (strcmp(storage[i].key, key) == 0) {
             strcpy(storage[i].key, key);
             strcpy(storage[i].value, value);
-            sprintf(result, "PUT:%s:%s", key, storage[i].value);
+            sprintf(result, "> PUT:%s:%s", key, storage[i].value);
             return;
         }
     }
@@ -45,16 +45,16 @@ void put(char *key, char *value, char *result) {
             strcpy(storage[i].key, key);
             strcpy(storage[i].value, value);
             storageItemCount++;
-            sprintf(result, "PUT:%s:%s", key, storage[i].value);
+            sprintf(result, "> PUT:%s:%s", key, storage[i].value);
             return;
         }
     }
-    sprintf(result, "No entry could be created");
+    sprintf(result, "> No entry could be created");
 }
 
 void del(char *key, char *result) {
     if (isAlphanumeric(key) == 0) {
-        sprintf(result, "Not an alphanumeric value");
+        sprintf(result, "> Not an alphanumeric value");
         return;
     }
 
@@ -63,11 +63,11 @@ void del(char *key, char *result) {
             strcpy(storage[i].key, "");
             strcpy(storage[i].value, "");
             storageItemCount--;
-            sprintf(result, "DEL:%s:key_deleted", key);
+            sprintf(result, "> DEL:%s:key_deleted", key);
             return;
         }
     }
-    sprintf(result, "DEL:%s:key_nonexistent", key);
+    sprintf(result, "> DEL:%s:key_nonexistent", key);
 }
 
 void show(char *result) {
@@ -79,11 +79,11 @@ void show(char *result) {
 
     for (int i = 0; i < storageSize; i++) {
         if (strcmp(storage[i].key, "") != 0) {
-            sprintf(tmp, "Index: %d   Key: %s  Value: %s\r\n", i, storage[i].key, storage[i].value);
+            sprintf(tmp, "> Index: %d   Key: %s  Value: %s\r\n", i, storage[i].key, storage[i].value);
             strcat(message, tmp);
         }
     }
-    sprintf(tmp, "Number of existing entries: %d", storageItemCount);
+    sprintf(tmp, "> Number of existing entries: %d", storageItemCount);
     strcat(message, tmp);
 
     sprintf(result, "%s", message);

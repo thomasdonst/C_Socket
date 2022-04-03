@@ -18,12 +18,12 @@ int clientSocket;
 
 void initializeServerSocket() {
     // define type of server socket
-    serverAddress.sin_family = AF_INET;
-    serverAddress.sin_addr.s_addr = INADDR_ANY;
+    serverAddress.sin_family = AF_INET; // AF_INET = IPv4
+    serverAddress.sin_addr.s_addr = INADDR_ANY; // INADDR_ANY = socket will be bound to all interfaces
     serverAddress.sin_port = htons(PORT);
 
     // create server socket
-    if ((serverSocket = socket(AF_INET, SOCK_STREAM, 0)) == 0) {
+    if ((serverSocket = socket(AF_INET, SOCK_STREAM, 0)) == 0) { // SOCK_STREAM = TCP; SOCK_DGRAM = UDP
         perror("Server socket can not be initialized");
         exit(EXIT_FAILURE);
     }
@@ -60,7 +60,7 @@ void acceptClientConnection() {
 void sendMessageToClient(char *message) {
     char messageWithNewLine[strlen(message)];
     sprintf(messageWithNewLine, "%s\r\n", message);
-    write(clientSocket, messageWithNewLine, strlen(messageWithNewLine));
+    send(clientSocket, messageWithNewLine, strlen(messageWithNewLine), 0);
 }
 
 void sendInputInformation() {
@@ -69,18 +69,30 @@ void sendInputInformation() {
 }
 
 int receiveMessage(char *message) {
+    int i = 0;
     int disconnectionStatus;
     char input[MAX_ENTRY_SIZE];
     input[0] = '\0';
     message[0] = '\0';
 
     while ((disconnectionStatus = recv(clientSocket, input, sizeof(input), 0)) > 0) {
+        // Prevent buffer overflow
+        if (i > MAX_ENTRY_SIZE - 1){
+            sprintf(message, "%s", "\r\n> Too many characters");
+            sendMessageToClient(message);
+            sprintf(message, "%s", "> Too many characters");
+            return disconnectionStatus;
+        }
+
         if (input[0] == '\r' || input[0] == '\n')
             return disconnectionStatus;
+
         input[1] = '\0';
         // Only symbols, letters and numbers get registered as an input
-        if (input[0] > 31 && input[0] < 127)
+        if (input[0] > 31 && input[0] < 127){
             strcat(message, input);
+            i++;
+        }
     }
 }
 

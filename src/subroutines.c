@@ -1,5 +1,4 @@
 #include "stdio.h"
-#include "stdlib.h"
 #include "ctype.h"
 #include "include/subroutines.h"
 #include <string.h>
@@ -53,10 +52,10 @@ void executeCommand(Command command, char *result) {
         show(result);
 
     else if (strcmp(command.type, "quit") == 0 && strcmp(command.key, "") == 0 && strcmp(command.value, "") == 0)
-        sprintf(result, "%s", "Connection closed by foreign host");
+        sprintf(result, "%s", "> Connection closed by foreign host");
 
     else
-        sprintf(result, "%s", "Unknown command");
+        sprintf(result, "%s", "> Unknown command");
 }
 
 void toLower(char *string) {
