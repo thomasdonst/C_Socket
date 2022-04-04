@@ -1,5 +1,6 @@
 #include "include/server.h"
 #include "include/subroutines.h"
+#include "include/keyValueStore.h"
 #include "include/configuration.h"
 
 #include <string.h>
@@ -9,7 +10,8 @@ int main() {
     signal(SIGINT, closeServerSocket);
 
     initializeServerSocket();
-    acceptClientConnection();
+    initializeSharedMemory();
+    handleClientConnection();
     sendInputInformation();
 
     int disconnectionStatus;
@@ -21,7 +23,7 @@ int main() {
         showMessage(message);
 
         command = fetchCommand(message);
-        executeCommand(command, result);
+        processCommand(command, result);
         showMessage(result);
         sendMessageToClient(result);
 

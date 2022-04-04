@@ -1,14 +1,20 @@
 #ifndef C_SOCKET_SUBROUTINES_H
 #define C_SOCKET_SUBROUTINES_H
 
+#define MAX_ARGUMENT_LENGTH 16
+
 typedef struct Command_{
-    char type[128];
-    char key[128];
-    char value[128];
+    char type[MAX_ARGUMENT_LENGTH];
+    char key[MAX_ARGUMENT_LENGTH];
+    char value[MAX_ARGUMENT_LENGTH];
 } Command;
 
+void initializeSharedMemory();
+void closeSharedMemory();
+void increment();
+
 Command fetchCommand(char *message);
-void executeCommand(Command command, char *result);
+void processCommand(Command command, char *result);
 void toLower(char *string);
 int isAlphanumeric(char *string);
 

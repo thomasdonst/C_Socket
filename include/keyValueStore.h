@@ -1,12 +1,16 @@
 #ifndef C_SOCKET_KEYVALUESTORE_H
 #define C_SOCKET_KEYVALUESTORE_H
 
-#define MAX_LENGTH 128
+#define MAX_ARGUMENT_LENGTH 16
 
 typedef struct Entry_{
-    char key[MAX_LENGTH];
-    char value[MAX_LENGTH];
+    char key[MAX_ARGUMENT_LENGTH];
+    char value[MAX_ARGUMENT_LENGTH];
 } Entry;
+
+//void initializeSharedMemory();
+//void closeSharedMemory();
+//void increment();
 
 void get(char *key, char *result);
 void put(char *key, char *value, char *result);

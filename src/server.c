@@ -3,6 +3,8 @@
 
 #include "stdio.h"
 #include "netinet/in.h"
+#include "include/keyValueStore.h"
+#include "include/subroutines.h"
 #include <sys/socket.h>
 #include <unistd.h>
 #include <string.h>
@@ -41,7 +43,7 @@ void initializeServerSocket() {
     }
 
     // try to specify maximum of X pending connections for server socket
-    if (listen(serverSocket, NUMBER_OF_PENDING_CONNECTIONS) != 0) {
+    if (listen(serverSocket, MAX_PENDING_CONNECTIONS) != 0) {
         showErrorMessage("Server socket can not listen");
         exit(EXIT_FAILURE);
     }
@@ -50,14 +52,38 @@ void initializeServerSocket() {
     char info[255];
     sprintf(info, "Server started %s:%d\r\nWaiting for clients to connect ...",
             inet_ntoa(serverAddress.sin_addr), ntohs(serverAddress.sin_port));
-    puts(info);
+    showMessage(info);
 }
 
-void acceptClientConnection() {
-    if ((clientSocket = accept(serverSocket, &clientAddress, &clientAddressLength)) < 0)
-        showMessage("Client could not be accepted");
 
-    showMessage("Client accepted");
+void handleClientConnection() {
+    int pid;
+
+    // toDO(): Remove later
+    if (ALLOW_MULTIPLE_CONNECTIONS) {
+        while (1) {
+            if ((clientSocket = accept(serverSocket, &clientAddress, &clientAddressLength)) < 0) {
+                showErrorMessage("Client could not be accepted");
+                exit(0);
+            } else
+                showMessage("Client accepted");
+
+            pid = fork();
+            if (pid == -1) {
+                showErrorMessage("Could not fork process");
+                exit(EXIT_FAILURE);
+            }
+            if (pid == 0)
+                break;
+
+            cleanUp();
+        }
+    } else {
+        if ((clientSocket = accept(serverSocket, &clientAddress, &clientAddressLength)) < 0)
+            showErrorMessage("Client could not be accepted");
+
+        showMessage("Client accepted");
+    }
 }
 
 void sendMessageToClient(char *message) {
@@ -124,4 +150,14 @@ void showErrorMessage(char *message) {
 
 void closeServerSocket() {
     close(serverSocket);
+}
+
+void closeClientSocket() {
+    close(clientSocket);
+}
+
+void cleanUp() {
+    closeClientSocket();
+    close(clientSocket);
+    closeSharedMemory();
 }
