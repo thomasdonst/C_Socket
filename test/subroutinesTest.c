@@ -14,7 +14,7 @@ void after(void) {
 MU_TEST(fetchCommandTests) {
     Command command;
     Command expectedCommand;
-    char message[MAX_ENTRY_SIZE];
+    char message[MAX_STRING_SIZE];
 
     strcpy(message, "");
     expectedCommand = (Command) {"", "", ""};
@@ -70,4 +70,3 @@ int main() {
     MU_REPORT();
     return MU_EXIT_CODE;
 }
-

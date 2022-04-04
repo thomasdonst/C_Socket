@@ -8,9 +8,9 @@ typedef struct Entry_{
     char value[MAX_ARGUMENT_LENGTH];
 } Entry;
 
-//void initializeSharedMemory();
-//void closeSharedMemory();
-//void increment();
+void initializeSharedMemory();
+void attachClientToSharedMemory();
+void closeSharedMemory();
 
 void get(char *key, char *result);
 void put(char *key, char *value, char *result);

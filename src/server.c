@@ -4,7 +4,6 @@
 #include "stdio.h"
 #include "netinet/in.h"
 #include "include/keyValueStore.h"
-#include "include/subroutines.h"
 #include <sys/socket.h>
 #include <unistd.h>
 #include <string.h>
@@ -17,6 +16,9 @@ int clientAddressLength;
 
 struct sockaddr_in clientAddress;
 int clientSocket;
+
+int processId;
+int currentClient = 0;
 
 void initializeServerSocket() {
     // define type of server socket
@@ -57,55 +59,51 @@ void initializeServerSocket() {
 
 
 void handleClientConnection() {
-    int pid;
+    while (1) {
+        acceptClientConnection();
 
-    // toDO(): Remove later
-    if (ALLOW_MULTIPLE_CONNECTIONS) {
-        while (1) {
-            if ((clientSocket = accept(serverSocket, &clientAddress, &clientAddressLength)) < 0) {
-                showErrorMessage("Client could not be accepted");
-                exit(0);
-            } else
-                showMessage("Client accepted");
+        currentClient++;
+        showClientMessage("Client accepted");
 
-            pid = fork();
-            if (pid == -1) {
-                showErrorMessage("Could not fork process");
-                exit(EXIT_FAILURE);
-            }
-            if (pid == 0)
-                break;
-
-            cleanUp();
+        processId = fork();
+        if (processId == -1) {
+            showErrorMessage("Could not fork process");
+            exit(EXIT_FAILURE);
         }
-    } else {
-        if ((clientSocket = accept(serverSocket, &clientAddress, &clientAddressLength)) < 0)
-            showErrorMessage("Client could not be accepted");
+        if (processId == 0)
+            break;
 
-        showMessage("Client accepted");
+        closeClientSocket();
+    }
+}
+
+void acceptClientConnection() {
+    if ((clientSocket = accept(serverSocket, &clientAddress, &clientAddressLength)) < 0) {
+        showErrorMessage("Client could not be accepted");
+        exit(0);
     }
 }
 
 void sendMessageToClient(char *message) {
-    char messageWithNewLine[strlen(message)];
+    char messageWithNewLine[KEY_VALUE_STORE_SIZE * (3 * MAX_ARGUMENT_LENGTH + 30)];
     sprintf(messageWithNewLine, "%s\r\n", message);
     send(clientSocket, messageWithNewLine, strlen(messageWithNewLine), 0);
 }
 
-void sendInputInformation() {
+void greetClient() {
     sendMessageToClient("GET [key]\r\nPUT [key] [value]\r\nDEL [key]\r\nSHOW\r\nQUIT\r\n");
 }
 
 int receiveMessage(char *message) {
     int i = 0;
     int disconnectionStatus;
-    char input[MAX_ENTRY_SIZE];
+    char input[MAX_STRING_SIZE];
     input[0] = '\0';
     message[0] = '\0';
 
     while ((disconnectionStatus = recv(clientSocket, input, sizeof(input), 0)) > 0) {
         // Prevent buffer overflow
-        if (i > MAX_ENTRY_SIZE - 1) {
+        if (i > MAX_STRING_SIZE - 1) {
             sprintf(message, "%s", "\r\n> Too many characters");
             sendMessageToClient(message);
             sprintf(message, "%s", "> Too many characters");
@@ -140,8 +138,20 @@ void showDisconnectionStatus(int status) {
     }
 }
 
+int hasClientQuit(char *response, int disconnectionStatus) {
+    return strcmp(response, "quit") == 0 || disconnectionStatus < 1;
+}
+
 void showMessage(char *message) {
     puts(message);
+}
+
+void showClientMessage(char *message) {
+    char *clientString[KEY_VALUE_STORE_SIZE * (3 * MAX_ARGUMENT_LENGTH + 30)];
+    sprintf(clientString, "[Client %d] ", currentClient);
+    strcat(clientString, message);
+    puts(clientString);
+
 }
 
 void showErrorMessage(char *message) {
@@ -158,6 +168,9 @@ void closeClientSocket() {
 
 void cleanUp() {
     closeClientSocket();
-    close(clientSocket);
-    closeSharedMemory();
+
+    if (processId > 0) {
+        closeServerSocket();
+        closeSharedMemory();
+    }
 }

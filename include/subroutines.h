@@ -9,9 +9,6 @@ typedef struct Command_{
     char value[MAX_ARGUMENT_LENGTH];
 } Command;
 
-void initializeSharedMemory();
-void closeSharedMemory();
-void increment();
 
 Command fetchCommand(char *message);
 void processCommand(Command command, char *result);
