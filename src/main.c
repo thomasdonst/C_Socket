@@ -6,24 +6,27 @@
 #include <signal.h>
 
 int main() {
+    int disconnectionStatus;
+    Command command;
+    char message[BUFFER_LENGTH];
+    char result[KEY_VALUE_STORE_SIZE *
+                (COUNT_OF_COMMAND_ARGUMENTS * MAX_ARGUMENT_LENGTH + ADDITIONAL_SPACE)];
+
     signal(SIGINT, cleanUp);
 
     initializeServerSocket();
     initializeSharedMemory();
 
     // toDo: Remove if/else with acceptClientConnection later (debugging purposes)
-    if (MULTIPLE_CLIENT_SESSIONS == 1)
+    if (ALLOW_MULTIPLE_CLIENTS == 1)
         handleClientConnection();
-    else
+    else {
+        showMessage("DEBUG: Single Session");
         acceptClientConnection();
-
+    }
     attachClientToSharedMemory();
     greetClient();
 
-    int disconnectionStatus;
-    Command command;
-    char message[MAX_STRING_SIZE];
-    char result[KEY_VALUE_STORE_SIZE * (3 * MAX_ARGUMENT_LENGTH + 30)];
     while (1) {
         disconnectionStatus = receiveMessage(message);
         showClientMessage(message);

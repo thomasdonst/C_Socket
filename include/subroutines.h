@@ -2,6 +2,7 @@
 #define C_SOCKET_SUBROUTINES_H
 
 #define MAX_ARGUMENT_LENGTH 16
+#define COUNT_OF_COMMAND_ARGUMENTS 3
 
 typedef struct Command_{
     char type[MAX_ARGUMENT_LENGTH];

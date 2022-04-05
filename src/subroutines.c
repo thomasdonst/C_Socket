@@ -1,6 +1,6 @@
 #include "include/subroutines.h"
-#include "include/configuration.h"
 #include "include/keyValueStore.h"
+#include "include/server.h"
 
 #include "stdio.h"
 #include "ctype.h"
@@ -22,16 +22,22 @@ Command fetchCommand(char *message) {
     if (containsOnlySpaceCharacters(message) == 1)
         return command;
 
-    char messageCopy[MAX_STRING_SIZE];
+    char messageCopy[BUFFER_LENGTH];
+    messageCopy[0] = '\0';
     sprintf(messageCopy, "%s", message);
     char *token;
     char delimiter[] = " ";
 
     strncpy(command.type, strtok(messageCopy, delimiter), MAX_ARGUMENT_LENGTH);
-    if ((token = strtok(NULL, delimiter)) != NULL)
+    command.type[MAX_ARGUMENT_LENGTH - 1] = '\0';
+    if ((token = strtok(NULL, delimiter)) != NULL){
         strncpy(command.key, token, MAX_ARGUMENT_LENGTH);
-    if ((token = strtok(NULL, delimiter)) != NULL)
+        command.key[MAX_ARGUMENT_LENGTH - 1] = '\0';
+    }
+    if ((token = strtok(NULL, delimiter)) != NULL){
         strncpy(command.value, token, MAX_ARGUMENT_LENGTH);
+        command.value[MAX_ARGUMENT_LENGTH - 1] = '\0';
+    }
 
     return command;
 }

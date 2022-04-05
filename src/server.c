@@ -1,9 +1,10 @@
 #include "include/server.h"
+#include "include/keyValueStore.h"
 #include "include/configuration.h"
+#include "include/subroutines.h"
 
 #include "stdio.h"
 #include "netinet/in.h"
-#include "include/keyValueStore.h"
 #include <sys/socket.h>
 #include <unistd.h>
 #include <string.h>
@@ -84,12 +85,6 @@ void acceptClientConnection() {
     }
 }
 
-void sendMessageToClient(char *message) {
-    char messageWithNewLine[KEY_VALUE_STORE_SIZE * (3 * MAX_ARGUMENT_LENGTH + 30)];
-    sprintf(messageWithNewLine, "%s\r\n", message);
-    send(clientSocket, messageWithNewLine, strlen(messageWithNewLine), 0);
-}
-
 void greetClient() {
     sendMessageToClient("GET [key]\r\nPUT [key] [value]\r\nDEL [key]\r\nSHOW\r\nQUIT\r\n");
 }
@@ -97,13 +92,13 @@ void greetClient() {
 int receiveMessage(char *message) {
     int i = 0;
     int disconnectionStatus;
-    char input[MAX_STRING_SIZE];
+    char input[BUFFER_LENGTH];
     input[0] = '\0';
     message[0] = '\0';
 
     while ((disconnectionStatus = recv(clientSocket, input, sizeof(input), 0)) > 0) {
         // Prevent buffer overflow
-        if (i > MAX_STRING_SIZE - 1) {
+        if (i > BUFFER_LENGTH - 1) {
             sprintf(message, "%s", "\r\n> Too many characters");
             sendMessageToClient(message);
             sprintf(message, "%s", "> Too many characters");
@@ -146,12 +141,21 @@ void showMessage(char *message) {
     puts(message);
 }
 
+void sendMessageToClient(char *message) {
+    char messageWithNewLine[KEY_VALUE_STORE_SIZE *
+                (COUNT_OF_COMMAND_ARGUMENTS * MAX_ARGUMENT_LENGTH + ADDITIONAL_SPACE)];
+    messageWithNewLine[0] = '\0';
+    sprintf(messageWithNewLine, "%s\r\n", message);
+    send(clientSocket, messageWithNewLine, strlen(messageWithNewLine), 0);
+}
+
 void showClientMessage(char *message) {
-    char *clientString[KEY_VALUE_STORE_SIZE * (3 * MAX_ARGUMENT_LENGTH + 30)];
+    char clientString[KEY_VALUE_STORE_SIZE *
+                            (COUNT_OF_COMMAND_ARGUMENTS * MAX_ARGUMENT_LENGTH + ADDITIONAL_SPACE)];
+    clientString[0] = '\0';
     sprintf(clientString, "[Client %d] ", currentClient);
     strcat(clientString, message);
     puts(clientString);
-
 }
 
 void showErrorMessage(char *message) {

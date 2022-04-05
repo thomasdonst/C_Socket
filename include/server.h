@@ -1,6 +1,8 @@
 #ifndef C_SOCKET_SERVER_H
 #define C_SOCKET_SERVER_H
 
+#define BUFFER_LENGTH 128
+
 extern struct sockaddr_in serverAddress;
 extern int serverSocket;
 extern int clientAddressLength;

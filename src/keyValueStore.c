@@ -11,9 +11,9 @@ Entry *storage;
 int sharedMemoryId;
 
 void initializeSharedMemory() {
-    if ((sharedMemoryId = shmget(IPC_PRIVATE,
-                                 sizeof(storage) * KEY_VALUE_STORE_SIZE,
-                                 IPC_CREAT | 0777)) == -1) {
+    if ((sharedMemoryId =
+                 shmget(IPC_PRIVATE, sizeof(storage) * KEY_VALUE_STORE_SIZE,
+                        IPC_CREAT | 0777)) == -1) {
         perror("Shared_Memory_Get failed");
         exit(EXIT_FAILURE);
     }
@@ -94,12 +94,13 @@ void del(char *key, char *result) {
 }
 
 void show(char *result) {
-    char tmp[KEY_VALUE_STORE_SIZE * (3 * MAX_ARGUMENT_LENGTH + 30)];
-    char message[KEY_VALUE_STORE_SIZE * (3 * MAX_ARGUMENT_LENGTH + 30)];
+    char tmp[KEY_VALUE_STORE_SIZE *
+             (COUNT_OF_COMMAND_ARGUMENTS * MAX_ARGUMENT_LENGTH + ADDITIONAL_SPACE)];
+    char message[KEY_VALUE_STORE_SIZE *
+                 (COUNT_OF_COMMAND_ARGUMENTS * MAX_ARGUMENT_LENGTH + ADDITIONAL_SPACE)];
 
     tmp[0] = '\0';
     message[0] = '\0';
-
 
     int counter = 0;
     for (int i = 0; i < KEY_VALUE_STORE_SIZE; i++) {
