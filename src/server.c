@@ -80,7 +80,7 @@ void handleClientConnection() {
 
 void acceptClientConnection() {
     if ((clientSocket = accept(serverSocket, &clientAddress, &clientAddressLength)) < 0) {
-        showErrorMessage("Client could not be accepted");
+        showMessage("Server closed");
         exit(0);
     }
 }
@@ -120,13 +120,11 @@ int receiveMessage(char *message) {
 void showDisconnectionStatus(int status) {
     switch (status) {
         case 0:
-            showMessage("Client disconnected");
+        case 2:
+            showClientMessage("> Client disconnected");
             break;
         case 1:
             showErrorMessage("Receive failed");
-            break;
-        case 2:
-            showErrorMessage("Session closed");
             break;
         default:
             showErrorMessage("Connection lost");
@@ -143,7 +141,7 @@ void showMessage(char *message) {
 
 void sendMessageToClient(char *message) {
     char messageWithNewLine[KEY_VALUE_STORE_SIZE *
-                (COUNT_OF_COMMAND_ARGUMENTS * MAX_ARGUMENT_LENGTH + ADDITIONAL_SPACE)];
+                            (COUNT_OF_COMMAND_ARGUMENTS * MAX_ARGUMENT_LENGTH + ADDITIONAL_SPACE)];
     messageWithNewLine[0] = '\0';
     sprintf(messageWithNewLine, "%s\r\n", message);
     send(clientSocket, messageWithNewLine, strlen(messageWithNewLine), 0);
@@ -151,7 +149,7 @@ void sendMessageToClient(char *message) {
 
 void showClientMessage(char *message) {
     char clientString[KEY_VALUE_STORE_SIZE *
-                            (COUNT_OF_COMMAND_ARGUMENTS * MAX_ARGUMENT_LENGTH + ADDITIONAL_SPACE)];
+                      (COUNT_OF_COMMAND_ARGUMENTS * MAX_ARGUMENT_LENGTH + ADDITIONAL_SPACE)];
     clientString[0] = '\0';
     sprintf(clientString, "[Client %d] ", currentClient);
     strcat(clientString, message);
@@ -171,10 +169,9 @@ void closeClientSocket() {
 }
 
 void cleanUp() {
-    closeClientSocket();
+    showMessage("Debug: Clean up");
 
-    if (processId > 0) {
-        closeServerSocket();
-        closeSharedMemory();
-    }
+    closeClientSocket();
+    closeServerSocket();
+    closeSharedMemory();
 }
