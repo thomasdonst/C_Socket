@@ -1,7 +1,9 @@
 #include "include/subroutines.h"
-#include "include/configuration.h"
 #include "include/minunit.h"
+#include "include/server.h"
+
 #include <stdio.h>
+#include <stdlib.h>
 
 
 void before(void) {
@@ -14,7 +16,7 @@ void after(void) {
 MU_TEST(fetchCommandTests) {
     Command command;
     Command expectedCommand;
-    char message[MAX_STRING_SIZE];
+    char message[BUFFER_LENGTH];
 
     strcpy(message, "");
     expectedCommand = (Command) {"", "", ""};
