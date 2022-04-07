@@ -15,7 +15,7 @@ int main() {
     signal(SIGINT, cleanUp);
 
     initializeServerSocket();
-    initializeSharedMemory();
+    initializeSharedMemories();
 
     // toDo: Remove if/else with acceptClientConnection later (debugging purposes)
     if (ALLOW_MULTIPLE_CLIENTS == 1)
@@ -24,7 +24,7 @@ int main() {
         showMessage("DEBUG: Single Session");
         acceptClientConnection();
     }
-    attachClientToSharedMemory();
+    attachClientToSharedMemories();
     greetClient();
 
     while (1) {

@@ -6,31 +6,54 @@
 #include <string.h>
 #include <sys/shm.h>
 #include <stdlib.h>
+#include <unistd.h>
 
 Entry *storage;
-int sharedMemoryId;
+int storageMemoryId;
 
-void initializeSharedMemory() {
-    if ((sharedMemoryId =
-                 shmget(IPC_PRIVATE, sizeof(storage) * KEY_VALUE_STORE_SIZE,
-                        IPC_CREAT | 0777)) == -1) {
-        perror("Shared_Memory_Get failed");
+int *exclusiveAccess;
+int exclusiveAccessMemoryId;
+
+void initializeSharedMemories() {
+    if ((storageMemoryId = shmget(IPC_PRIVATE, sizeof(storage) * KEY_VALUE_STORE_SIZE,
+                                  IPC_CREAT | 0777)) == -1) {
+        perror("Shared_Memory_Get for storage failed");
         exit(EXIT_FAILURE);
     }
-    attachClientToSharedMemory();
+
+    if ((exclusiveAccessMemoryId = shmget(IPC_PRIVATE, sizeof(int),
+                                          IPC_CREAT | 0777)) == -1) {
+        perror("Shared_Memory_Get for exclusive access failed");
+        exit(EXIT_FAILURE);
+    }
+    attachClientToSharedMemories();
 }
 
-void attachClientToSharedMemory() {
-    storage = (Entry *) shmat(sharedMemoryId, 0, 0);
+void attachClientToSharedMemories() {
+    storage = (Entry *) shmat(storageMemoryId, 0, 0);
     if (storage == (Entry *) (-1)) {
-        perror("Shared_Memory_Attach failed");
+        perror("Shared_Memory_Attach for storage failed");
+        exit(EXIT_FAILURE);
+    }
+
+    exclusiveAccess = (int *) shmat(exclusiveAccessMemoryId, 0, 0);
+    if (exclusiveAccess == (int *) (-1)) {
+        perror("Shared_Memory_Attach for exclusive access failed");
         exit(EXIT_FAILURE);
     }
 }
 
-void closeSharedMemory() {
+void closeSharedMemories() {
     shmdt(storage);
-    shmctl(sharedMemoryId, IPC_RMID, 0);
+    shmctl(storageMemoryId, IPC_RMID, 0);
+
+    shmdt(exclusiveAccess);
+    shmctl(exclusiveAccessMemoryId, IPC_RMID, 0);
+}
+
+void resolveExclusiveAccess(){
+   if(getpid() == *exclusiveAccess)
+       *exclusiveAccess = 0;
 }
 
 void get(char *key, char *result) {
@@ -115,4 +138,24 @@ void show(char *result) {
         sprintf(result, "%s", message);
     } else
         sprintf(result, "%s", "> Key value store is empty");
+}
+
+void beg(char *result){
+    if(*exclusiveAccess == getpid()){
+        sprintf(result, "%s", "> BEG:already_used");
+        return;
+    }
+
+    *exclusiveAccess = getpid();
+    sprintf(result, "%s", "> BEG");
+}
+
+void end(char *result){
+    if(*exclusiveAccess == 0){
+        sprintf(result, "%s", "> END:use_BEG_first");
+        return;
+    }
+
+    *exclusiveAccess = 0;
+    sprintf(result, "%s", "> END");
 }

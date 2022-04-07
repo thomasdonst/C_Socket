@@ -86,7 +86,8 @@ void acceptClientConnection() {
 }
 
 void greetClient() {
-    sendMessageToClient("GET [key]\r\nPUT [key] [value]\r\nDEL [key]\r\nSHOW\r\nQUIT\r\n");
+    sendMessageToClient("GET [key]\r\nPUT [key] [value]\r\nDEL [key]\r\n"
+                        "SHOW\r\nBEG\r\nEND\r\nQUIT\r\n");
 }
 
 int receiveMessage(char *message) {
@@ -173,5 +174,6 @@ void cleanUp() {
 
     closeClientSocket();
     closeServerSocket();
-    closeSharedMemory();
+    resolveExclusiveAccess();
+    closeSharedMemories();
 }

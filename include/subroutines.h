@@ -13,7 +13,9 @@ typedef struct Command_{
 
 Command fetchCommand(char *message);
 void processCommand(Command command, char *result);
+int containsOnlySpaceCharacters(char *string);
 void toLower(char *string);
 int isAlphanumeric(char *string);
+int hasAccess();
 
 #endif //C_SOCKET_SUBROUTINES_H
