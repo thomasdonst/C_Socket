@@ -85,7 +85,7 @@ void processCommand(Command command, char *result) {
     }
 
     else if (strcmp(command.type, "beg") == 0 && strcmp(command.key, "") == 0 && strcmp(command.value, "") == 0) {
-        semaphor = sem_open("beg/end", O_CREAT, 0777, 1);
+        semaphor = sem_open("beg_end", O_CREAT, 0777, 1);
         sem_wait(semaphor);
 
         beg(result); // Critical section
@@ -94,7 +94,7 @@ void processCommand(Command command, char *result) {
     }
 
     else if (strcmp(command.type, "end") == 0 && strcmp(command.key, "") == 0 && strcmp(command.value, "") == 0) {
-        semaphor = sem_open("beg/end", O_CREAT, 0777, 1);
+        semaphor = sem_open("beg_end", O_CREAT, 0777, 1);
         sem_wait(semaphor);
 
         end(result); // Critical section
