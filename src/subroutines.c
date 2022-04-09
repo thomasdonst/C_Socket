@@ -61,18 +61,24 @@ void processCommand(Command command, char *result) {
         keySemaphor = sem_open(command.key, O_CREAT, 0777, 1);
         sem_wait(keySemaphor);
 
-        put(command.key, command.value, result); // Critical section
+        int keyModified = put(command.key, command.value, result); // Critical section
 
         sem_post(keySemaphor);
+
+        if(keyModified == 1)
+            notifySubscribers(command.key, result);
     }
 
     else if (strcmp(command.type, "del") == 0 && strcmp(command.key, "") != 0 && strcmp(command.value, "") == 0) {
         keySemaphor = sem_open(command.key, O_CREAT, 0777, 1);
         sem_wait(keySemaphor);
 
-        del(command.key, result); // Critical section
+        int keyDeleted = del(command.key, result); // Critical section
 
         sem_post(keySemaphor);
+
+        if(keyDeleted == 1)
+            notifySubscribers(command.key, result);
     }
 
     else if (strcmp(command.type, "show") == 0 && strcmp(command.key, "") == 0 && strcmp(command.value, "") == 0) {
@@ -98,6 +104,24 @@ void processCommand(Command command, char *result) {
         sem_wait(semaphor);
 
         end(result); // Critical section
+
+        sem_post(semaphor);
+    }
+
+    else if (strcmp(command.type, "sub") == 0 && strcmp(command.key, "") != 0 && strcmp(command.value, "") == 0) {
+        semaphor = sem_open("sub_unsub", O_CREAT, 0777, 1);
+        sem_wait(semaphor);
+
+        sub(command.key, result); // Critical section
+
+        sem_post(semaphor);
+    }
+
+    else if (strcmp(command.type, "unsub") == 0 && strcmp(command.key, "") != 0 && strcmp(command.value, "") == 0) {
+        semaphor = sem_open("sub_unsub", O_CREAT, 0777, 1);
+        sem_wait(semaphor);
+
+        unsub(command.key, result); // Critical section
 
         sem_post(semaphor);
     }

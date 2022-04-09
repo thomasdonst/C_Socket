@@ -1,12 +1,15 @@
 #include "include/keyValueStore.h"
 #include "include/configuration.h"
 #include "include/subroutines.h"
+#include "include/server.h"
 
 #include <stdio.h>
 #include <string.h>
 #include <sys/shm.h>
 #include <stdlib.h>
 #include <unistd.h>
+#include <sys/msg.h>
+#include <sys/ipc.h>
 
 Entry *storage;
 int storageMemoryId;
@@ -14,16 +17,30 @@ int storageMemoryId;
 int *exclusiveAccess;
 int exclusiveAccessMemoryId;
 
+Subscription *subscription;
+int subscriptionMemoryId;
+
+key_t messageQueue;
+
 void initializeSharedMemories() {
+    // key value store
     if ((storageMemoryId = shmget(IPC_PRIVATE, sizeof(storage) * KEY_VALUE_STORE_SIZE,
                                   IPC_CREAT | 0777)) == -1) {
         perror("Shared_Memory_Get for storage failed");
         exit(EXIT_FAILURE);
     }
 
+    // exclusive access (beg/end)
     if ((exclusiveAccessMemoryId = shmget(IPC_PRIVATE, sizeof(int),
                                           IPC_CREAT | 0777)) == -1) {
         perror("Shared_Memory_Get for exclusive access failed");
+        exit(EXIT_FAILURE);
+    }
+
+    // subscriptions
+    if ((subscriptionMemoryId = shmget(IPC_PRIVATE, sizeof(subscription) * SUBSCRIPTION_SIZE,
+                                       IPC_CREAT | 0777)) == -1) {
+        perror("Shared_Memory_Get for subscription failed");
         exit(EXIT_FAILURE);
     }
     attachClientToSharedMemories();
@@ -41,6 +58,12 @@ void attachClientToSharedMemories() {
         perror("Shared_Memory_Attach for exclusive access failed");
         exit(EXIT_FAILURE);
     }
+
+    subscription = (Subscription *) shmat(subscriptionMemoryId, 0, 0);
+    if (subscription == (Subscription *) (-1)) {
+        perror("Shared_Memory_Attach for subscription failed");
+        exit(EXIT_FAILURE);
+    }
 }
 
 void closeSharedMemories() {
@@ -49,11 +72,45 @@ void closeSharedMemories() {
 
     shmdt(exclusiveAccess);
     shmctl(exclusiveAccessMemoryId, IPC_RMID, 0);
+
+    shmdt(subscription);
+    shmctl(subscriptionMemoryId, IPC_RMID, 0);
 }
 
-void resolveExclusiveAccess(){
-   if(getpid() == *exclusiveAccess)
-       *exclusiveAccess = 0;
+void initializeMessageQueue() {
+    if ((messageQueue = msgget(IPC_PRIVATE, 0664 | IPC_CREAT)) == -1) {
+        puts("Message_get failed");
+        exit(0);
+    }
+}
+
+void closeMessageQueue(int processId) {
+    if(processId > 0)
+        msgctl(messageQueue, IPC_RMID, NULL);
+}
+
+void resolveExclusiveAccess() {
+    if (getpid() == *exclusiveAccess)
+        *exclusiveAccess = 0;
+}
+
+int getValueByKey(char *key, char *value) {
+    value[0] = '\0';
+    for (int i = 0; i < KEY_VALUE_STORE_SIZE; i++) {
+        if (strcmp(storage[i].key, key) == 0) {
+            sprintf(value, "%s", storage[i].value);
+            return 1;
+        }
+    }
+    return 0;
+}
+
+int isSubscribed(char *key) {
+    for (int i = 0; i < SUBSCRIPTION_SIZE; i++) {
+        if (subscription[i].processId == getpid() && strcmp(subscription[i].key, key) == 0)
+            return 1;
+    }
+    return 0;
 }
 
 void get(char *key, char *result) {
@@ -71,19 +128,22 @@ void get(char *key, char *result) {
     sprintf(result, "> GET:%s:key_nonexistent", key);
 }
 
-void put(char *key, char *value, char *result) {
+int put(char *key, char *value, char *result) {
     if (isAlphanumeric(key) == 0 || isAlphanumeric(value) == 0) {
         sprintf(result, "> Not an alphanumeric value");
-        return;
+        return 0;
     }
 
     // Search entry with this key -> Replace value
+    char previousValue[MAX_ARGUMENT_LENGTH];
+    previousValue[0] = '\0';
     for (int i = 0; i < KEY_VALUE_STORE_SIZE; i++) {
         if (strcmp(storage[i].key, key) == 0) {
+            sprintf(previousValue, "%s", storage[i].value);
             sprintf(storage[i].key, "%s", key);
             sprintf(storage[i].value, "%s", value);
             sprintf(result, "> PUT:%s:%s", key, storage[i].value);
-            return;
+            return (strcmp(previousValue, storage[i].value) == 0) ? 0 : 1;
         }
     }
 
@@ -93,16 +153,17 @@ void put(char *key, char *value, char *result) {
             sprintf(storage[i].key, "%s", key);
             sprintf(storage[i].value, "%s", value);
             sprintf(result, "> PUT:%s:%s", key, storage[i].value);
-            return;
+            return 1;
         }
     }
     sprintf(result, "> No entry could be created");
+    return 0;
 }
 
-void del(char *key, char *result) {
+int del(char *key, char *result) {
     if (isAlphanumeric(key) == 0) {
         sprintf(result, "> Not an alphanumeric value");
-        return;
+        return 0;
     }
 
     for (int i = 0; i < KEY_VALUE_STORE_SIZE; i++) {
@@ -110,10 +171,11 @@ void del(char *key, char *result) {
             sprintf(storage[i].key, "%s", "");
             sprintf(storage[i].value, "%s", "");
             sprintf(result, "> DEL:%s:key_deleted", key);
-            return;
+            return 1;
         }
     }
     sprintf(result, "> DEL:%s:key_nonexistent", key);
+    return 0;
 }
 
 void show(char *result) {
@@ -136,12 +198,13 @@ void show(char *result) {
     if (counter > 0) {
         message[strlen(message) - 2] = '\0';
         sprintf(result, "%s", message);
-    } else
+    }
+    else
         sprintf(result, "%s", "> Key value store is empty");
 }
 
-void beg(char *result){
-    if(*exclusiveAccess == getpid()){
+void beg(char *result) {
+    if (*exclusiveAccess == getpid()) {
         sprintf(result, "%s", "> BEG:already_used");
         return;
     }
@@ -150,12 +213,71 @@ void beg(char *result){
     sprintf(result, "%s", "> BEG");
 }
 
-void end(char *result){
-    if(*exclusiveAccess == 0){
+void end(char *result) {
+    if (*exclusiveAccess == 0) {
         sprintf(result, "%s", "> END:use_BEG_first");
         return;
     }
 
     *exclusiveAccess = 0;
     sprintf(result, "%s", "> END");
+}
+
+void sub(char *key, char *result) {
+    char value[MAX_ARGUMENT_LENGTH];
+    if (getValueByKey(key, value) == 0) {
+        sprintf(result, "%s", "> SUB:key_not_exists");
+        return;
+    }
+
+    if (isSubscribed(key) == 1) {
+        sprintf(result, "%s", "> SUB:key_already_subscribed");
+        return;
+    }
+
+    for (int i = 0; i < SUBSCRIPTION_SIZE; i++) {
+        if (subscription[i].processId == 0) {
+            subscription[i].processId = getpid();
+            sprintf(subscription[i].key, "%s", key);
+            sprintf(result, "> SUB:%s:%s", key, value);
+            return;
+        }
+    }
+
+    sprintf(result, "%s", "> SUB:failed");
+}
+
+void unsub(char *key, char *result) {
+    char value[MAX_ARGUMENT_LENGTH];
+    if (getValueByKey(key, value) == 0) {
+        sprintf(result, "%s", "> UNSUB:key_not_exists");
+        return;
+    }
+
+    if (isSubscribed(key) == 0) {
+        sprintf(result, "%s", "> UNSUB:SUB_first");
+        return;
+    }
+
+    for (int i = 0; i < SUBSCRIPTION_SIZE; i++) {
+        if (subscription[i].processId == getpid() && strcmp(subscription[i].key, key) == 0) {
+            subscription[i].processId = 0;
+            sprintf(subscription[i].key, "%s", "");
+            sprintf(result, "> UNSUB:%s:%s", key, value);
+            return;
+        }
+    }
+
+    sprintf(result, "%s", "> UNSUB:failed");
+}
+
+void notifySubscribers(char *key, char *content) {
+    Message message;
+    for (int i = 0; i < SUBSCRIPTION_SIZE; i++) {
+        if (strcmp(subscription[i].key, key) == 0 && subscription[i].processId != getpid()) {
+            message.header = subscription[i].processId;
+            sprintf(message.payload, "%s", content);
+            msgsnd(messageQueue, &message, PAYLOAD_LENGTH, 0);
+        }
+    }
 }

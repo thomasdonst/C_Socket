@@ -3,6 +3,7 @@
 
 #define BUFFER_LENGTH 128
 
+
 extern struct sockaddr_in serverAddress;
 extern int serverSocket;
 extern int clientAddressLength;
@@ -18,6 +19,7 @@ void handleClientConnection();
 void acceptClientConnection();
 void sendMessageToClient(char *message);
 void greetClient();
+void handleSubscriberNotifications();
 int receiveMessage(char *message);
 void showDisconnectionStatus(int status);
 int hasClientQuit(char *response, int disconnectionStatus);

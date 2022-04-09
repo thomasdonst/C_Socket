@@ -10,6 +10,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include <arpa/inet.h>
+#include <sys/msg.h>
 
 struct sockaddr_in serverAddress;
 int serverSocket;
@@ -18,7 +19,7 @@ int clientAddressLength;
 struct sockaddr_in clientAddress;
 int clientSocket;
 
-int processId;
+int forkedProcessId = 1;
 int currentClient = 0;
 
 void initializeServerSocket() {
@@ -66,12 +67,12 @@ void handleClientConnection() {
         currentClient++;
         showClientMessage("Client accepted");
 
-        processId = fork();
-        if (processId == -1) {
+        forkedProcessId = fork();
+        if (forkedProcessId == -1) {
             showErrorMessage("Could not fork process");
             exit(EXIT_FAILURE);
         }
-        if (processId == 0)
+        if (forkedProcessId == 0)
             break;
 
         closeClientSocket();
@@ -87,7 +88,27 @@ void acceptClientConnection() {
 
 void greetClient() {
     sendMessageToClient("GET [key]\r\nPUT [key] [value]\r\nDEL [key]\r\n"
-                        "SHOW\r\nBEG\r\nEND\r\nQUIT\r\n");
+                        "SUB [key]\r\nUNSUB [key]\r\nSHOW\r\nBEG\r\nEND\r\nQUIT\r\n");
+}
+
+void handleSubscriberNotifications() {
+    int pid = fork();
+    if (pid == -1) {
+        showErrorMessage("Could not fork process");
+        exit(EXIT_FAILURE);
+    }
+    if (pid > 0)
+        return;
+
+    while (1) {
+        Message message;
+        if (msgrcv(messageQueue, &message, PAYLOAD_LENGTH, getppid(), 0) < 0) {
+            cleanUp();
+            return;
+        }
+
+        sendMessageToClient(message.payload);
+    }
 }
 
 int receiveMessage(char *message) {
@@ -176,4 +197,5 @@ void cleanUp() {
     closeServerSocket();
     resolveExclusiveAccess();
     closeSharedMemories();
+    closeMessageQueue(forkedProcessId);
 }

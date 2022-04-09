@@ -10,22 +10,19 @@ int main() {
     Command command;
     char message[BUFFER_LENGTH];
     char result[KEY_VALUE_STORE_SIZE *
-                (COUNT_OF_COMMAND_ARGUMENTS * MAX_ARGUMENT_LENGTH + ADDITIONAL_SPACE)];
+                (COUNT_OF_COMMAND_ARGUMENTS *
+                 MAX_ARGUMENT_LENGTH + ADDITIONAL_SPACE)];
 
     signal(SIGINT, cleanUp);
 
     initializeServerSocket();
     initializeSharedMemories();
+    initializeMessageQueue();
 
-    // toDo: Remove if/else with acceptClientConnection later (debugging purposes)
-    if (ALLOW_MULTIPLE_CLIENTS == 1)
-        handleClientConnection();
-    else {
-        showMessage("DEBUG: Single Session");
-        acceptClientConnection();
-    }
+    handleClientConnection();
     attachClientToSharedMemories();
     greetClient();
+    handleSubscriberNotifications();
 
     while (1) {
         disconnectionStatus = receiveMessage(message);
