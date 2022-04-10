@@ -83,9 +83,8 @@ void initializeMessageQueue() {
     }
 }
 
-void closeMessageQueue(int forkedProcessId) {
-    if(forkedProcessId > 0)
-        msgctl(messageQueue, IPC_RMID, NULL);
+void closeMessageQueue() {
+    msgctl(messageQueue, IPC_RMID, NULL);
 }
 
 void resolveExclusiveAccess() {

@@ -191,11 +191,11 @@ void closeClientSocket() {
 }
 
 void cleanUp(int forkedProcessId) {
-    showMessage("Debug: Clean up");
-
     closeClientSocket();
     closeServerSocket();
     resolveExclusiveAccess();
     closeSharedMemories();
-    closeMessageQueue(forkedProcessId);
+
+    if (forkedProcessId > 0)
+        closeMessageQueue(forkedProcessId);
 }
