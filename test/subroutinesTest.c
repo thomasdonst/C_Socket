@@ -16,7 +16,7 @@ void after(void) {
 MU_TEST(fetchCommandTests) {
     Command command;
     Command expectedCommand;
-    char message[BUFFER_LENGTH];
+    char message[MESSAGE_BUFFER];
 
     strcpy(message, "");
     expectedCommand = (Command) {"", "", ""};

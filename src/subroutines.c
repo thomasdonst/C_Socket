@@ -1,6 +1,5 @@
 #include "include/subroutines.h"
 #include "include/keyValueStore.h"
-#include "include/server.h"
 
 #include "stdio.h"
 #include "ctype.h"
@@ -17,7 +16,7 @@ Command fetchCommand(char *message) {
     if (containsOnlySpaceCharacters(message) == 1)
         return command;
 
-    char messageCopy[BUFFER_LENGTH];
+    char messageCopy[MESSAGE_BUFFER];
     messageCopy[0] = '\0';
     sprintf(messageCopy, "%s", message);
     char *token;

@@ -1,7 +1,6 @@
 #ifndef C_SOCKET_SERVER_H
 #define C_SOCKET_SERVER_H
 
-#define BUFFER_LENGTH 128
 
 
 extern struct sockaddr_in serverAddress;
@@ -11,7 +10,7 @@ extern int clientAddressLength;
 extern struct sockaddr_in clientAddress;
 extern int clientSocket;
 
-extern int currentClient;
+extern int currentClientNumber;
 
 void initializeServerSocket();
 void closeServerSocket();
@@ -28,7 +27,7 @@ void showClientMessage(char *message);
 void showErrorMessage(char *message);
 void closeServerSocket();
 void closeClientSocket();
-void cleanUp();
+void cleanUp(int forkedProcessId);
 
 
 #endif //C_SOCKET_SERVER_H

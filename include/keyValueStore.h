@@ -32,7 +32,7 @@ void attachClientToSharedMemories();
 void closeSharedMemories();
 void resolveExclusiveAccess();
 void initializeMessageQueue();
-void closeMessageQueue(int processId);
+void closeMessageQueue(int forkedProcessId);
 
 void get(char *key, char *result);
 int put(char *key, char *value, char *result);

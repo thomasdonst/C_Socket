@@ -3,6 +3,7 @@
 
 #define MAX_ARGUMENT_LENGTH 16
 #define COUNT_OF_COMMAND_ARGUMENTS 3
+#define MESSAGE_BUFFER 128
 
 typedef struct Command_{
     char type[MAX_ARGUMENT_LENGTH];

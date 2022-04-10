@@ -1,7 +1,6 @@
 #include "include/keyValueStore.h"
 #include "include/configuration.h"
 #include "include/subroutines.h"
-#include "include/server.h"
 
 #include <stdio.h>
 #include <string.h>
@@ -84,8 +83,8 @@ void initializeMessageQueue() {
     }
 }
 
-void closeMessageQueue(int processId) {
-    if(processId > 0)
+void closeMessageQueue(int forkedProcessId) {
+    if(forkedProcessId > 0)
         msgctl(messageQueue, IPC_RMID, NULL);
 }
 

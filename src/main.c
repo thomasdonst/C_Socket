@@ -6,12 +6,13 @@
 #include <signal.h>
 
 int main() {
+    const int RESULT_BUFFER = KEY_VALUE_STORE_SIZE *
+                              (COUNT_OF_COMMAND_ARGUMENTS *
+                                MAX_ARGUMENT_LENGTH + ADDITIONAL_SPACE);
     int disconnectionStatus;
     Command command;
-    char message[BUFFER_LENGTH];
-    char result[KEY_VALUE_STORE_SIZE *
-                (COUNT_OF_COMMAND_ARGUMENTS *
-                 MAX_ARGUMENT_LENGTH + ADDITIONAL_SPACE)];
+    char message[MESSAGE_BUFFER];
+    char result[RESULT_BUFFER];
 
     signal(SIGINT, cleanUp);
 
@@ -34,10 +35,10 @@ int main() {
         showClientMessage(result);
         sendMessageToClient(result);
 
-        if (hasClientQuit(command.type, disconnectionStatus) == 1)
-            break;
+        if (hasClientQuit(command.type, disconnectionStatus) == 1) {
+            showDisconnectionStatus(disconnectionStatus);
+            cleanUp(0);
+            return 0;
+        }
     }
-
-    showDisconnectionStatus(disconnectionStatus);
-    cleanUp();
 }

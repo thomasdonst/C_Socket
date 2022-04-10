@@ -19,8 +19,7 @@ int clientAddressLength;
 struct sockaddr_in clientAddress;
 int clientSocket;
 
-int forkedProcessId = 1;
-int currentClient = 0;
+int currentClientNumber;
 
 void initializeServerSocket() {
     // define type of server socket
@@ -64,15 +63,15 @@ void handleClientConnection() {
     while (1) {
         acceptClientConnection();
 
-        currentClient++;
+        currentClientNumber++;
         showClientMessage("Client accepted");
 
-        forkedProcessId = fork();
-        if (forkedProcessId == -1) {
+        int pid = fork();
+        if (pid == -1) {
             showErrorMessage("Could not fork process");
             exit(EXIT_FAILURE);
         }
-        if (forkedProcessId == 0)
+        if (pid == 0)
             break;
 
         closeClientSocket();
@@ -82,6 +81,7 @@ void handleClientConnection() {
 void acceptClientConnection() {
     if ((clientSocket = accept(serverSocket, &clientAddress, &clientAddressLength)) < 0) {
         showMessage("Server closed");
+        cleanUp(1);
         exit(0);
     }
 }
@@ -103,7 +103,7 @@ void handleSubscriberNotifications() {
     while (1) {
         Message message;
         if (msgrcv(messageQueue, &message, PAYLOAD_LENGTH, getppid(), 0) < 0) {
-            cleanUp();
+            cleanUp(0);
             return;
         }
 
@@ -114,13 +114,13 @@ void handleSubscriberNotifications() {
 int receiveMessage(char *message) {
     int i = 0;
     int disconnectionStatus;
-    char input[BUFFER_LENGTH];
+    char input[MESSAGE_BUFFER];
     input[0] = '\0';
     message[0] = '\0';
 
     while ((disconnectionStatus = recv(clientSocket, input, sizeof(input), 0)) > 0) {
         // Prevent buffer overflow
-        if (i > BUFFER_LENGTH - 1) {
+        if (i > MESSAGE_BUFFER - 1) {
             sprintf(message, "%s", "\r\n> Too many characters");
             sendMessageToClient(message);
             sprintf(message, "%s", "> Too many characters");
@@ -173,7 +173,7 @@ void showClientMessage(char *message) {
     char clientString[KEY_VALUE_STORE_SIZE *
                       (COUNT_OF_COMMAND_ARGUMENTS * MAX_ARGUMENT_LENGTH + ADDITIONAL_SPACE)];
     clientString[0] = '\0';
-    sprintf(clientString, "[Client %d] ", currentClient);
+    sprintf(clientString, "[Client %d] ", currentClientNumber);
     strcat(clientString, message);
     puts(clientString);
 }
@@ -190,7 +190,7 @@ void closeClientSocket() {
     close(clientSocket);
 }
 
-void cleanUp() {
+void cleanUp(int forkedProcessId) {
     showMessage("Debug: Clean up");
 
     closeClientSocket();
