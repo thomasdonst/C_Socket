@@ -15,6 +15,7 @@ int main() {
     char result[RESULT_BUFFER];
 
     signal(SIGINT, cleanUp);
+    signal(SIGCHLD, SIG_IGN);
 
     initializeServerSocket();
     initializeSharedMemories();
