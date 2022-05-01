@@ -88,7 +88,7 @@ void acceptClientConnection() {
 
 void greetClient() {
     sendMessageToClient("GET [key]\r\nPUT [key] [value]\r\nDEL [key]\r\n"
-                        "SUB [key]\r\nUNSUB [key]\r\nSHOW\r\nBEG\r\nEND\r\nQUIT\r\n");
+                        "SUB [key]\r\nUNSUB [key]\r\nOP [key] [sys_call]\r\nSHOW\r\nBEG\r\nEND\r\nQUIT\r\n");
 }
 
 void handleSubscriberNotifications() {
@@ -197,5 +197,5 @@ void cleanUp(int forkedProcessId) {
     closeSharedMemories();
 
     if (forkedProcessId > 0)
-        closeMessageQueue(forkedProcessId);
+        closeMessageQueue();
 }

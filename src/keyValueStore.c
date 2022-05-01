@@ -112,11 +112,6 @@ int isSubscribed(char *key) {
 }
 
 void get(char *key, char *result) {
-    if (isAlphanumeric(key) == 0) {
-        sprintf(result, "> Not an alphanumeric value");
-        return;
-    }
-
     for (int i = 0; i < KEY_VALUE_STORE_SIZE; i++) {
         if (strcmp(storage[i].key, key) == 0) {
             sprintf(result, "> GET:%s:%s", key, storage[i].value);
@@ -127,11 +122,6 @@ void get(char *key, char *result) {
 }
 
 int put(char *key, char *value, char *result) {
-    if (isAlphanumeric(key) == 0 || isAlphanumeric(value) == 0) {
-        sprintf(result, "> Not an alphanumeric value");
-        return 0;
-    }
-
     // Search entry with this key -> Replace value
     char previousValue[MAX_ARGUMENT_LENGTH];
     previousValue[0] = '\0';
@@ -159,11 +149,6 @@ int put(char *key, char *value, char *result) {
 }
 
 int del(char *key, char *result) {
-    if (isAlphanumeric(key) == 0) {
-        sprintf(result, "> Not an alphanumeric value");
-        return 0;
-    }
-
     for (int i = 0; i < KEY_VALUE_STORE_SIZE; i++) {
         if (strcmp(storage[i].key, key) == 0) {
             sprintf(storage[i].key, "%s", "");
@@ -267,6 +252,68 @@ void unsub(char *key, char *result) {
     }
 
     sprintf(result, "%s", "> UNSUB:failed");
+}
+
+void op(Command command, char *result) {
+    // Get value by key
+    char value[MAX_ARGUMENT_LENGTH];
+    if (getValueByKey(command.key, value) == 0) {
+        sprintf(result, "%s", "> OP:Invalid_key");
+        return;
+    }
+
+    char *args[MAX_PARAMETER_LENGTH];
+    char valueCopy[MAX_ARGUMENT_LENGTH];
+    valueCopy[0] = '\0';
+    sprintf(valueCopy, "%s", value);
+    char *token;
+    char delimiter[] = " ";
+    char *rest = valueCopy;
+
+    // parse arguments
+    args[0] = command.value;
+    int counter = 1;
+    while ((token = strtok_r(rest, delimiter, &rest)) != NULL) {
+        args[counter] = token;
+        counter++;
+    }
+    args[counter] = NULL;
+
+    int pipe_connect[2];
+    pipe(pipe_connect);
+    if (fork() == 0) {
+        dup2(pipe_connect[1], 1); // Connect standard output with pipes write interface
+        close(pipe_connect[0]);
+        execvp(command.value, args);
+        puts("Invalid system call");
+        exit(1);
+    }
+    else if (fork() == 0) {
+        dup2(pipe_connect[0], 0); // Connect standard input with pipes read interface
+        close(pipe_connect[1]);
+
+        char result[PAYLOAD_LENGTH];
+        int nbytes = read(pipe_connect[0], result, sizeof(result));
+
+        if (nbytes > MAX_ARGUMENT_LENGTH)
+            result[MAX_ARGUMENT_LENGTH - 1] = '\0';
+        else
+            result[nbytes - 1] = '\0';
+
+        Command putCommand = {"", "", ""};
+        sprintf(putCommand.type, "PUT");
+        sprintf(putCommand.key, "%s", command.key);
+        sprintf(putCommand.value, "%s", result);
+
+        handlePut(putCommand, result);
+        exit(0);
+    }
+    else {
+        close(pipe_connect[0]);
+        close(pipe_connect[1]);
+    }
+
+    sprintf(result, "> sending %s to system call %s", value, command.value);
 }
 
 void notifySubscribers(char *key, char *content) {

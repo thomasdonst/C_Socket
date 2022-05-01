@@ -19,11 +19,9 @@ add_executable(
         Test
         include/minunit.h
         test/subroutinesTest.c
-        test/minunit_example.c
         src/keyValueStore.c include/keyValueStore.h
         src/configuration.c include/configuration.h
         src/subroutines.c include/subroutines.h
-        test/keyValueStoreTest.c
 )
 
 add_test(Test Test)
