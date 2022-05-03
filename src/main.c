@@ -4,11 +4,12 @@
 #include "include/configuration.h"
 
 #include <signal.h>
+#include <unistd.h>
 
 int main() {
     const int RESULT_BUFFER = KEY_VALUE_STORE_SIZE *
                               (COUNT_OF_COMMAND_ARGUMENTS *
-                                MAX_ARGUMENT_LENGTH + ADDITIONAL_SPACE);
+                               MAX_ARGUMENT_LENGTH + ADDITIONAL_SPACE);
     int disconnectionStatus;
     Command command;
     char message[MESSAGE_BUFFER];
@@ -30,7 +31,7 @@ int main() {
         disconnectionStatus = receiveMessage(message);
         showClientMessage(message);
 
-        command = fetchCommand(message);
+        command = parseCommand(message);
         processCommand(command, result);
 
         showClientMessage(result);
@@ -39,6 +40,7 @@ int main() {
         if (hasClientQuit(command.type, disconnectionStatus) == 1) {
             showDisconnectionStatus(disconnectionStatus);
             cleanUp(0);
+            kill(getpid() + 1, SIGKILL);
             return 0;
         }
     }

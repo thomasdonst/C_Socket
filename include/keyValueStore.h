@@ -1,9 +1,9 @@
 #ifndef C_SOCKET_KEYVALUESTORE_H
 #define C_SOCKET_KEYVALUESTORE_H
 
+#include "include/subroutines.h"
 #include <sys/ipc.h>
 
-#define MAX_ARGUMENT_LENGTH 16
 #define ADDITIONAL_SPACE 30
 #define PAYLOAD_LENGTH 256
 
@@ -42,6 +42,7 @@ void beg(char *result);
 void end(char *result);
 void sub(char *key, char *result);
 void unsub(char *key, char *result);
+void op(Command command, char *result);
 
 void notifySubscribers(char *key, char *content);
 

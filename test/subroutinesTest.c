@@ -1,6 +1,5 @@
 #include "include/subroutines.h"
 #include "include/minunit.h"
-#include "include/server.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -13,58 +12,92 @@ void after(void) {
 
 }
 
-MU_TEST(fetchCommandTests) {
+MU_TEST(parseCommandTests) {
     Command command;
     Command expectedCommand;
     char message[MESSAGE_BUFFER];
 
     strcpy(message, "");
     expectedCommand = (Command) {"", "", ""};
-    command = fetchCommand(message);
+    command = parseCommand(message);
     mu_assert_string_eq(expectedCommand.type, command.type);
     mu_assert_string_eq(expectedCommand.key, command.key);
     mu_assert_string_eq(expectedCommand.value, command.value);
 
     strcpy(message, " ");
     expectedCommand = (Command) {"", "", ""};
-    command = fetchCommand(message);
+    command = parseCommand(message);
     mu_assert_string_eq(expectedCommand.type, command.type);
     mu_assert_string_eq(expectedCommand.key, command.key);
     mu_assert_string_eq(expectedCommand.value, command.value);
 
     strcpy(message, "   ");
     expectedCommand = (Command) {"", "", ""};
-    command = fetchCommand(message);
+    command = parseCommand(message);
     mu_assert_string_eq(expectedCommand.type, command.type);
     mu_assert_string_eq(expectedCommand.key, command.key);
     mu_assert_string_eq(expectedCommand.value, command.value);
 
     strcpy(message, "  A B C ");
     expectedCommand = (Command) {"A", "B", "C"};
-    command = fetchCommand(message);
+    command = parseCommand(message);
     mu_assert_string_eq(expectedCommand.type, command.type);
     mu_assert_string_eq(expectedCommand.key, command.key);
     mu_assert_string_eq(expectedCommand.value, command.value);
 
     strcpy(message, "A \0 B C ");
     expectedCommand = (Command) {"A", "", ""};
-    command = fetchCommand(message);
+    command = parseCommand(message);
     mu_assert_string_eq(expectedCommand.type, command.type);
     mu_assert_string_eq(expectedCommand.key, command.key);
     mu_assert_string_eq(expectedCommand.value, command.value);
 
     strcpy(message, "AAA    B C  D");
-    expectedCommand = (Command) {"AAA", "B", "C"};
-    command = fetchCommand(message);
+    expectedCommand = (Command) {"AAA", "B", "C  D"};
+    command = parseCommand(message);
+    mu_assert_string_eq(expectedCommand.type, command.type);
+    mu_assert_string_eq(expectedCommand.key, command.key);
+    mu_assert_string_eq(expectedCommand.value, command.value);
+
+    strcpy(message, "A");
+    expectedCommand = (Command) {"A", "", ""};
+    command = parseCommand(message);
+    mu_assert_string_eq(expectedCommand.type, command.type);
+    mu_assert_string_eq(expectedCommand.key, command.key);
+    mu_assert_string_eq(expectedCommand.value, command.value);
+
+    strcpy(message, "PUT calculation  4 + 1  ");
+    expectedCommand = (Command) {"PUT", "calculation", "4 + 1"};
+    command = parseCommand(message);
+    mu_assert_string_eq(expectedCommand.type, command.type);
+    mu_assert_string_eq(expectedCommand.key, command.key);
+    mu_assert_string_eq(expectedCommand.value, command.value);
+
+    strcpy(message, "a a      y = 3*2 (3) +1");
+    expectedCommand = (Command) {"a", "a", "y = 3*2 (3) +1"};
+    command = parseCommand(message);
+    mu_assert_string_eq(expectedCommand.type, command.type);
+    mu_assert_string_eq(expectedCommand.key, command.key);
+    mu_assert_string_eq(expectedCommand.value, command.value);
+
+    strcpy(message, "put c 2233 / 22 * 3 - 212");
+    expectedCommand = (Command) {"put", "c", "2233 / 22 * 3 - 212"};
+    command = parseCommand(message);
+    mu_assert_string_eq(expectedCommand.type, command.type);
+    mu_assert_string_eq(expectedCommand.key, command.key);
+    mu_assert_string_eq(expectedCommand.value, command.value);
+
+    strcpy(message, "put / 33 2 3");
+    expectedCommand = (Command) {"put", "/", "33 2 3"};
+    command = parseCommand(message);
     mu_assert_string_eq(expectedCommand.type, command.type);
     mu_assert_string_eq(expectedCommand.key, command.key);
     mu_assert_string_eq(expectedCommand.value, command.value);
 }
 
-
 MU_TEST_SUITE(test_suite) {
     MU_SUITE_CONFIGURE(&before, &after);
-    MU_RUN_TEST(fetchCommandTests);
+    MU_RUN_TEST(parseCommandTests);
 }
 
 int main() {
