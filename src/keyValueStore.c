@@ -258,7 +258,7 @@ void op(Command command, char *result) {
     // Get value by key
     char value[MAX_ARGUMENT_LENGTH];
     if (getValueByKey(command.key, value) == 0) {
-        sprintf(result, "%s", "> OP:Invalid_key");
+        sprintf(result, "%s", "> OP:key_not_exists");
         return;
     }
 

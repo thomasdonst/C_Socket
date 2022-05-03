@@ -17,7 +17,7 @@ Command parseCommand(char *message);
 void processCommand(Command command, char *result);
 int containsOnlySpaceCharacters(char *string);
 void toLower(char *string);
-int isAlphanumeric(char *string);
+int containsSlash(char *string);
 char *trim(char *string);
 int hasAccess();
 

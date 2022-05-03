@@ -95,8 +95,8 @@ void handleGet(Command command, char *result) {
 }
 
 void handlePut(Command command, char *result) {
-    if(isAlphanumeric(command.key) == 0){
-        sprintf(result, "> PUT:key_is_not_alphanumeric");
+    if (containsSlash(command.key) == 1) {
+        sprintf(result, "> PUT:invalid_key");
         return;
     }
 
@@ -187,18 +187,16 @@ void toLower(char *string) {
         i++;
     }
 }
-int isAlphanumeric(char *string) {
-    if (string[0] == '\0')
-        return 0;
 
+int containsSlash(char *string) {
     int i = 0;
     while (string[i] != '\0') {
-        if (!isalnum(string[i]))
-            return 0;
+        if (string[i] == '/')
+            return 1;
         i++;
     }
 
-    return 1;
+    return 0;
 }
 
 char *ltrim(char *string) {
