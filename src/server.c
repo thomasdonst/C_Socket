@@ -112,29 +112,36 @@ void handleSubscriberNotifications() {
 }
 
 int receiveMessage(char *message) {
-    int i = 0;
-    int disconnectionStatus;
+    int currentBytes = 0;
+    int receivedBytes;
     char input[MESSAGE_BUFFER];
     input[0] = '\0';
     message[0] = '\0';
 
-    while ((disconnectionStatus = recv(clientSocket, input, sizeof(input), 0)) > 0) {
+    while ((receivedBytes = recv(clientSocket, input, sizeof(input), 0)) > 0) {
         // Prevent buffer overflow
-        if (i > MESSAGE_BUFFER - 1) {
+        if (currentBytes > MESSAGE_BUFFER - 1) {
             sprintf(message, "%s", "\r\n> Too many characters");
             sendMessageToClient(message);
             sprintf(message, "%s", "> Too many characters");
-            return disconnectionStatus;
+            return receivedBytes;
         }
 
         if (input[0] == '\r' || input[0] == '\n')
-            return disconnectionStatus;
+            return receivedBytes;
 
-        input[1] = '\0';
-        // Only symbols, letters and numbers get registered as an input
-        if (input[0] > 31 && input[0] < 127) {
-            strcat(message, input);
-            i++;
+        if (receivedBytes >= 2) {
+            sprintf(message, "%s", input);
+            message[receivedBytes - 1] = '\0';
+            return receivedBytes;
+        }
+        else {
+            input[1] = '\0';
+            // Only symbols, letters and numbers get registered as an input
+            if (input[0] > 31 && input[0] < 127) {
+                strcat(message, input);
+                currentBytes++;
+            }
         }
     }
 }

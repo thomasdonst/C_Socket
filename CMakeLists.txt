@@ -16,6 +16,14 @@ add_executable(
 )
 
 add_executable(
+        Client
+        src/client.c include/client.h
+        src/keyValueStore.c include/keyValueStore.h
+        src/configuration.c include/configuration.h
+        src/subroutines.c include/subroutines.h
+)
+
+add_executable(
         Test
         include/minunit.h
         test/subroutinesTest.c
