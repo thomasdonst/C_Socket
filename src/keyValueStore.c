@@ -112,7 +112,12 @@ int isSubscribed(char *key) {
 }
 
 void get(char *key, char *result) {
+
+
     for (int i = 0; i < KEY_VALUE_STORE_SIZE; i++) {
+        for (int i = 0; i != '\0'; ++i) {
+            if (storage[i].key == '*'|| storage[i].key[i] == '?') return true;
+        }
         if (strcmp(storage[i].key, key) == 0) {
             sprintf(result, "> GET:%s:%s", key, storage[i].value);
             return;
