@@ -9,6 +9,7 @@
 #include <unistd.h>
 #include <sys/msg.h>
 #include <sys/ipc.h>
+#include <stdbool.h>
 
 Entry *storage;
 int storageMemoryId;
@@ -110,21 +111,39 @@ int isSubscribed(char *key) {
     }
     return 0;
 }
+bool WildcardCheck(char *string){
+    for (int i = 0; i < strlen(string); ++i) {
+        if (string[i] == '*'|| string[i] == '?') return true;
+    }
+    return false;
+}
+bool WildcardMatch(char *inputKey, char *keyCheck) {
+    if (*inputKey == '\0' && *keyCheck == '\0') return true;
 
+    if (*inputKey == '*' && *(inputKey + 1) != '\0' && *keyCheck == '\0') return false;
+
+    if (*inputKey == '?' || *inputKey == *keyCheck) return WildcardMatch(inputKey + 1, keyCheck + 1);
+
+    if (*inputKey == '*') return WildcardMatch(inputKey + 1, keyCheck) || WildcardMatch(inputKey, keyCheck + 1);
+
+    return false;
+}
 void get(char *key, char *result) {
 
 
     for (int i = 0; i < KEY_VALUE_STORE_SIZE; i++) {
-        for (int i = 0; i != '\0'; ++i) {
-            if (storage[i].key == '*'|| storage[i].key[i] == '?') return true;
-        }
-        if (strcmp(storage[i].key, key) == 0) {
+
+        if (strcmp(storage[i].key, key) == 0 && WildcardCheck(key) == false) {
             sprintf(result, "> GET:%s:%s", key, storage[i].value);
             return;
         }
+        else if (WildcardMatch(key, storage[i].key)== true)
+            sprintf(result, "> GET:%s:%s", key, storage[i].value);
+            return;
     }
     sprintf(result, "> GET:%s:key_nonexistent", key);
 }
+
 
 int put(char *key, char *value, char *result) {
     // Search entry with this key -> Replace value

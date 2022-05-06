@@ -22,7 +22,8 @@ int main() {
     initializeSharedMemories();
     initializeMessageQueue();
 
-    handleClientConnection();
+    //handleClientConnection();
+    acceptClientConnection();
     attachClientToSharedMemories();
     greetClient();
     handleSubscriberNotifications();

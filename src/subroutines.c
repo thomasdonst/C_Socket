@@ -86,22 +86,6 @@ void processCommand(Command command, char *result) {
         sprintf(result, "%s", "> Unknown command");
 }
 
-
-bool WildcardMatch(char *inputKey, char *keyCheck){
-    if (*inputKey == '\0' && *keyCheck == '\0')  return true;
-
-    if (*inputKey == '*' && *(inputKey + 1) != '\0' && *keyCheck == '\0') return false;
-
-    if (*inputKey == '?' || *inputKey == *keyCheck) return WildcardMatch(inputKey + 1, keyCheck + 1);
-
-    if (*inputKey == '*') return WildcardMatch(inputKey + 1, keyCheck) || WildcardMatch(inputKey, keyCheck + 1);
-    return false;
-}
-
-
-void test(char *first, char *second)
-{  WildcardMatch(first, second)? puts("Matches: Yes"): puts("Matches: No"); }
-
 void handleGet(Command command, char *result) {
     sem_t *keySemaphor = sem_open(command.key, O_CREAT, 0777, 1);
     sem_wait(keySemaphor);
