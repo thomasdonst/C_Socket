@@ -12,6 +12,7 @@ extern int clientSocket;
 
 extern int currentClientNumber;
 
+void initializeSignals();
 void initializeServerSocket();
 void closeServerSocket();
 void handleClientConnection();
@@ -27,7 +28,7 @@ void showClientMessage(char *message);
 void showErrorMessage(char *message);
 void closeServerSocket();
 void closeClientSocket();
-void cleanUp(int forkedProcessId);
+void handleInterrupt();
 
 
 #endif //C_SOCKET_SERVER_H

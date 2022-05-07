@@ -33,6 +33,8 @@ void closeSharedMemories();
 void resolveExclusiveAccess();
 void initializeMessageQueue();
 void closeMessageQueue();
+void loadKeyValueStore();
+void saveKeyValueStore();
 
 void get(char *key, char *result);
 int put(char *key, char *value, char *result);

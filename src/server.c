@@ -11,6 +11,7 @@
 #include <stdlib.h>
 #include <arpa/inet.h>
 #include <sys/msg.h>
+#include <signal.h>
 
 struct sockaddr_in serverAddress;
 int serverSocket;
@@ -20,6 +21,15 @@ struct sockaddr_in clientAddress;
 int clientSocket;
 
 int currentClientNumber;
+
+int processId;
+
+void initializeSignals() {
+    processId = getpid();
+
+    signal(SIGINT, handleInterrupt);
+    signal(SIGCHLD, SIG_IGN);
+}
 
 void initializeServerSocket() {
     // define type of server socket
@@ -81,7 +91,6 @@ void handleClientConnection() {
 void acceptClientConnection() {
     if ((clientSocket = accept(serverSocket, &clientAddress, &clientAddressLength)) < 0) {
         showMessage("Server closed");
-        cleanUp(1);
         exit(0);
     }
 }
@@ -103,7 +112,6 @@ void handleSubscriberNotifications() {
     while (1) {
         Message message;
         if (msgrcv(messageQueue, &message, PAYLOAD_LENGTH, getppid(), 0) < 0) {
-            cleanUp(0);
             return;
         }
 
@@ -197,12 +205,14 @@ void closeClientSocket() {
     close(clientSocket);
 }
 
-void cleanUp(int forkedProcessId) {
+void handleInterrupt() {
+    if (processId == getpid()) {
+        saveKeyValueStore();
+        closeMessageQueue();
+    }
+
     closeClientSocket();
     closeServerSocket();
     resolveExclusiveAccess();
     closeSharedMemories();
-
-    if (forkedProcessId > 0)
-        closeMessageQueue();
 }

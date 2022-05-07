@@ -20,6 +20,7 @@ void toLower(char *string);
 int containsSlash(char *string);
 char *trim(char *string);
 int hasAccess();
+int isValidCommand(Command is, Command should);
 
 void handleGet(Command command, char *result);
 void handlePut(Command command, char *result);

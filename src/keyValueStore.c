@@ -92,6 +92,69 @@ void resolveExclusiveAccess() {
         *exclusiveAccess = 0;
 }
 
+int keyValueStoreExists() {
+    FILE *file;
+    file = fopen(RESTORE_FILE_NAME, "r");
+
+    if (file != NULL) {
+        fclose(file);
+        return 1;
+    }
+    else
+        return 0;
+}
+
+void loadKeyValueStore() {
+    FILE *fp;
+    if (!keyValueStoreExists(RESTORE_FILE_NAME)) {
+        if ((fp = fopen(RESTORE_FILE_NAME, "a")) == NULL)
+            printf("Unable to create %s", RESTORE_FILE_NAME);
+        fclose(fp);
+        return;
+    }
+
+    char *line = NULL;
+    size_t len = 0;
+
+    if ((fp = fopen(RESTORE_FILE_NAME, "r")) == NULL) {
+        printf("Unable to open %s", RESTORE_FILE_NAME);
+        exit(EXIT_FAILURE);
+    }
+
+    int counter = 0;
+    Command command;
+    while (getline(&line, &len, fp) != -1) {
+        command = parseCommand(line);
+        sprintf(storage[counter].key, "%s", command.key);
+        sprintf(storage[counter].value, "%s", command.value);
+
+        counter++;
+    }
+
+    fclose(fp);
+    if (line)
+        free(line);
+}
+
+void saveKeyValueStore() {
+    FILE *fp;
+    char tmp[MESSAGE_BUFFER];
+
+    if ((fp = fopen(RESTORE_FILE_NAME, "w")) == NULL) {
+        printf("Unable to open %s", RESTORE_FILE_NAME);
+        exit(EXIT_FAILURE);
+    }
+
+    for (int i = 0; i < KEY_VALUE_STORE_SIZE; i++) {
+        if (strcmp(storage[i].key, "") != 0) {
+            sprintf(tmp, "PUT %s %s\n", storage[i].key, storage[i].value);
+            fputs(tmp, fp);
+        }
+    }
+    fclose(fp);
+}
+
+
 int getValueByKey(char *key, char *value) {
     value[0] = '\0';
     for (int i = 0; i < KEY_VALUE_STORE_SIZE; i++) {

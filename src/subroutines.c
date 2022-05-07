@@ -42,6 +42,7 @@ Command parseCommand(char *message) {
     return command;
 }
 
+
 void processCommand(Command command, char *result) {
     if (hasAccess() == 0 && strcmp(command.type, "quit") != 0) {
         sprintf(result, "> Exclusive access: Command is not permitted");
@@ -49,41 +50,60 @@ void processCommand(Command command, char *result) {
     }
 
     result[0] = '\0';
+    sprintf(result, "> Unknown Command");
     toLower(command.type);
 
-    if (strcmp(command.type, "get") == 0 && strcmp(command.key, "") != 0 && strcmp(command.value, "") == 0)
+    if (isValidCommand(command, (Command) {"get", "!", ""})) {
         handleGet(command, result);
+        return;
+    }
 
-    else if (strcmp(command.type, "put") == 0 && strcmp(command.key, "") != 0 && strcmp(command.value, "") != 0)
+    if (isValidCommand(command, (Command) {"put", "!", "!"})) {
         handlePut(command, result);
+        return;
+    }
 
-    else if (strcmp(command.type, "del") == 0 && strcmp(command.key, "") != 0 && strcmp(command.value, "") == 0)
+    if (isValidCommand(command, (Command) {"del", "!", ""})) {
         handleDel(command, result);
+        return;
+    }
 
-    else if (strcmp(command.type, "show") == 0 && strcmp(command.key, "") == 0 && strcmp(command.value, "") == 0)
+    if (isValidCommand(command, (Command) {"show", "", ""})) {
         handleShow(command, result);
+        return;
+    }
 
-    else if (strcmp(command.type, "beg") == 0 && strcmp(command.key, "") == 0 && strcmp(command.value, "") == 0)
+    if (isValidCommand(command, (Command) {"beg", "", ""})) {
         handleBeg(result);
+        return;
+    }
 
-    else if (strcmp(command.type, "end") == 0 && strcmp(command.key, "") == 0 && strcmp(command.value, "") == 0)
+    if (isValidCommand(command, (Command) {"end", "", ""})) {
         handleEnd(result);
+        return;
+    }
 
-    else if (strcmp(command.type, "sub") == 0 && strcmp(command.key, "") != 0 && strcmp(command.value, "") == 0)
+    if (isValidCommand(command, (Command) {"sub", "!", ""})) {
         handleSub(command, result);
+        return;
+    }
 
-    else if (strcmp(command.type, "unsub") == 0 && strcmp(command.key, "") != 0 && strcmp(command.value, "") == 0)
+    if (isValidCommand(command, (Command) {"unsub", "!", ""})) {
         handleUnsub(command, result);
+        return;
+    }
 
-    else if (strcmp(command.type, "op") == 0 && strcmp(command.key, "") != 0 && strcmp(command.value, "") != 0)
+    if (isValidCommand(command, (Command) {"op", "!", "!"})) {
         handleOp(command, result);
+        return;
+    }
 
-    else if (strcmp(command.type, "quit") == 0 && strcmp(command.key, "") == 0 && strcmp(command.value, "") == 0)
+    if (isValidCommand(command, (Command) {"quit", "", ""})) {
         sprintf(result, "%s", "> Connection closed by foreign host");
-
-    else
-        sprintf(result, "%s", "> Unknown command");
+        return;
+    }
 }
+
 
 void handleGet(Command command, char *result) {
     sem_t *keySemaphor = sem_open(command.key, O_CREAT, 0777, 1);
@@ -217,4 +237,10 @@ char *trim(char *string) {
 
 int hasAccess() {
     return *exclusiveAccess == getpid() || *exclusiveAccess == 0;
+}
+
+int isValidCommand(Command is, Command should) {
+    return strcmp(is.type, should.type) == 0
+           && strlen(is.key) > 0 == strlen(should.key)
+           && strlen(is.value) > 0 == strlen(should.value);
 }

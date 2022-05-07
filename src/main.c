@@ -15,12 +15,12 @@ int main() {
     char message[MESSAGE_BUFFER];
     char result[RESULT_BUFFER];
 
-    signal(SIGINT, cleanUp);
-    signal(SIGCHLD, SIG_IGN);
-
+    initializeSignals();
     initializeServerSocket();
     initializeSharedMemories();
     initializeMessageQueue();
+
+    loadKeyValueStore();
 
     handleClientConnection();
     attachClientToSharedMemories();
@@ -39,7 +39,7 @@ int main() {
 
         if (hasClientQuit(command.type, disconnectionStatus) == 1) {
             showDisconnectionStatus(disconnectionStatus);
-            cleanUp(0);
+            handleInterrupt();
             kill(getpid() + 1, SIGKILL);
             return 0;
         }
