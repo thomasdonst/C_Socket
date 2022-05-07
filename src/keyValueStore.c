@@ -184,6 +184,33 @@ void get(char *key, char *result) {
     sprintf(result, "> GET:%s:key_nonexistent", key);
 }
 
+void getWithWildCard(char *key, char *result) {
+    char tmp[KEY_VALUE_STORE_SIZE *
+             (COUNT_OF_COMMAND_ARGUMENTS * MAX_ARGUMENT_LENGTH + ADDITIONAL_SPACE)];
+    char message[KEY_VALUE_STORE_SIZE *
+                 (COUNT_OF_COMMAND_ARGUMENTS * MAX_ARGUMENT_LENGTH + ADDITIONAL_SPACE)];
+
+    tmp[0] = '\0';
+    message[0] = '\0';
+
+    int counter = 0;
+    for (int i = 0; i < KEY_VALUE_STORE_SIZE; i++) {
+        if (matchWildCard(key, storage[i].key) == 1 && strcmp("", storage[i].key) != 0) {
+            sprintf(tmp, "> GET:%s:%s\r\n", key, storage[i].value);
+            strcat(message, tmp);
+            counter++;
+        }
+    }
+
+    if (counter > 0) {
+        message[strlen(message) - 2] = '\0';
+        sprintf(result, "%s", message);
+        return;
+    }
+
+    sprintf(result, "> GET:%s:key_nonexistent", key);
+}
+
 int put(char *key, char *value, char *result) {
     // Search entry with this key -> Replace value
     char previousValue[MAX_ARGUMENT_LENGTH];
@@ -244,9 +271,10 @@ void show(char *result) {
     if (counter > 0) {
         message[strlen(message) - 2] = '\0';
         sprintf(result, "%s", message);
+        return;
     }
-    else
-        sprintf(result, "%s", "> Key value store is empty");
+
+    sprintf(result, "%s", "> Key value store is empty");
 }
 
 void beg(char *result) {
@@ -388,4 +416,29 @@ void notifySubscribers(char *key, char *content) {
             msgsnd(messageQueue, &message, PAYLOAD_LENGTH, 0);
         }
     }
+}
+
+int hasWildCard(char *string) {
+    for (int i = 0; i < strlen(string); ++i) {
+        if (string[i] == '*' || string[i] == '?')
+            return 1;
+    }
+
+    return 0;
+}
+
+int matchWildCard(char *wildCardKey, char *key) {
+    if (*wildCardKey == '\0' && *key == '\0')
+        return 1;
+
+    if (*wildCardKey == '*' && *(wildCardKey + 1) != '\0' && *key == '\0')
+        return 0;
+
+    if (*wildCardKey == '?' || *wildCardKey == *key)
+        return matchWildCard(wildCardKey + 1, key + 1);
+
+    if (*wildCardKey == '*')
+        return matchWildCard(wildCardKey + 1, key) || matchWildCard(wildCardKey, key + 1);
+
+    return 0;
 }

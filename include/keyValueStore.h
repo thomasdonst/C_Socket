@@ -37,6 +37,7 @@ void loadKeyValueStore();
 void saveKeyValueStore();
 
 void get(char *key, char *result);
+void getWithWildCard(char *key, char *result);
 int put(char *key, char *value, char *result);
 int del(char *key, char *result);
 void show(char *result);
@@ -47,5 +48,7 @@ void unsub(char *key, char *result);
 void op(Command command, char *result);
 
 void notifySubscribers(char *key, char *content);
+int hasWildCard(char *string);
+int matchWildCard(char *wildCardKey, char *key);
 
 #endif //C_SOCKET_KEYVALUESTORE_H

@@ -106,12 +106,28 @@ void processCommand(Command command, char *result) {
 
 
 void handleGet(Command command, char *result) {
-    sem_t *keySemaphor = sem_open(command.key, O_CREAT, 0777, 1);
-    sem_wait(keySemaphor);
+    if (containsSlash(command.key) == 1) {
+        sprintf(result, "> GET:invalid_key");
+        return;
+    }
 
-    get(command.key, result); // Critical section
+    if (hasWildCard(command.key) == 1) {
+        sem_t *semaphor = sem_open(command.type, O_CREAT, 0777, 1);
+        sem_wait(semaphor);
 
-    sem_post(keySemaphor);
+        getWithWildCard(command.key, result); // Critical section
+
+        sem_post(semaphor);
+    }
+    else {
+        sem_t *keySemaphor = sem_open(command.key, O_CREAT, 0777, 1);
+        sem_wait(keySemaphor);
+
+        get(command.key, result); // Critical section
+
+        sem_post(keySemaphor);
+    }
+
 }
 
 void handlePut(Command command, char *result) {
@@ -132,6 +148,11 @@ void handlePut(Command command, char *result) {
 }
 
 void handleDel(Command command, char *result) {
+    if (containsSlash(command.key) == 1) {
+        sprintf(result, "> DEL:invalid_key");
+        return;
+    }
+
     sem_t *keySemaphor = sem_open(command.key, O_CREAT, 0777, 1);
     sem_wait(keySemaphor);
 
