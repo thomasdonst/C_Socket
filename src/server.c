@@ -22,6 +22,7 @@ int clientSocket;
 int currentClientNumber;
 
 void initializeServerSocket() {
+    /*
     // define type of server socket
     serverAddress.sin_family = AF_INET; // AF_INET = IPv4
     serverAddress.sin_addr.s_addr = INADDR_ANY; // INADDR_ANY = socket will be bound to all interfaces
@@ -32,6 +33,7 @@ void initializeServerSocket() {
         showErrorMessage("Server socket can not be initialized");
         exit(EXIT_FAILURE);
     }
+    //serverSocket = socket(PFIN,SOCK_STREAM,1);
 
     // The purpose of this is to allow to reuse the port even if the process crash or been killed
     if (setsockopt(serverSocket, SOL_SOCKET, SO_REUSEADDR, &(int) {1}, sizeof(int)) < 0) {
@@ -50,6 +52,41 @@ void initializeServerSocket() {
         showErrorMessage("Server socket can not listen");
         exit(EXIT_FAILURE);
     }
+*/
+
+                        /* Socket descriptor for server */
+    int clntSock;                    /* Socket descriptor for client */
+    struct sockaddr_in echoServAddr; /* Local address */
+    struct sockaddr_in echoClntAddr; /* Client address */
+    unsigned short echoServPort;     /* Server port */
+    unsigned int clntLen;            /* Length of client address data structure */
+
+    printf("test");
+    if((serverSocket = socket(PF_INET, SOCK_STREAM, IPPROTO_TCP)) < 0){
+        printf("FAIL");
+        //printf(servSock);
+    }
+    memset(&echoServAddr, 0, sizeof(echoServAddr));   /* Zero out structure */
+    echoServAddr.sin_family = AF_INET;                /* Internet address family */
+    echoServAddr.sin_addr.s_addr = htonl(INADDR_ANY); /* Any incoming interface */
+    echoServAddr.sin_port = htons(echoServPort);
+    printf("a");
+    if (setsockopt(serverSocket, SOL_SOCKET, SO_REUSEADDR, &(int) {1}, sizeof(int)) < 0) {
+        printf("FAIL");
+    }
+    printf("b");
+
+
+
+    if(bind(serverSocket, (struct sockaddr *) &serverAddress, sizeof(serverAddress)) < 0){
+        printf("FAIL");
+    }
+    printf("c");
+    if(listen(serverSocket,MAX_PENDING_CONNECTIONS) != 0){
+        printf("FAIL");
+    }
+    printf("test");
+
 
     // show notification
     char info[255];
@@ -77,6 +114,7 @@ void handleClientConnection() {
         closeClientSocket();
     }
 }
+
 
 void acceptClientConnection() {
     if ((clientSocket = accept(serverSocket, &clientAddress, &clientAddressLength)) < 0) {
