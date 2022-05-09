@@ -9,7 +9,7 @@
 #include <string.h>
 #include <stdio.h>
 
-int serverSocket;
+int httpServerSocket;
 int RESULT_BUFFER;
 
 int main() {
@@ -39,24 +39,24 @@ int main() {
         sendMessage(message);
     }
 
-    close(serverSocket);
+    close(httpServerSocket);
     return 0;
 }
 
 int connectToServerSocket() {
-    serverSocket = socket(AF_INET, SOCK_STREAM, 0);
+    httpServerSocket = socket(AF_INET, SOCK_STREAM, 0);
 
     struct sockaddr_in serverAddress;
     serverAddress.sin_family = AF_INET; // AF_INET = IPv4
     serverAddress.sin_addr.s_addr = INADDR_ANY; // INADDR_ANY = socket will be bound to all interfaces
-    serverAddress.sin_port = htons(PORT);
+    serverAddress.sin_port = htons(TELNET_PORT);
 
-    return connect(serverSocket, (struct sockaddr *) &serverAddress, sizeof(serverAddress));
+    return connect(httpServerSocket, (struct sockaddr *) &serverAddress, sizeof(serverAddress));
 }
 
 char *receiveMessage(char *response) {
     int receivedBytes;
-    if ((receivedBytes = recv(serverSocket, response, RESULT_BUFFER, 0)) < 0)
+    if ((receivedBytes = recv(httpServerSocket, response, RESULT_BUFFER, 0)) < 0)
         puts("recv failed");
 
     response[receivedBytes - 2] = '\0';
@@ -75,9 +75,10 @@ int hasClientSentQuit(char *message) {
 
 void getInput(char *message) {
     fgets(message, RESULT_BUFFER, stdin);
+    message[strlen(message) - 1] = '\0';
 }
 
 void sendMessage(char *message) {
-    if (send(serverSocket, message, strlen(message), 0) < 0)
+    if (send(httpServerSocket, message, strlen(message), 0) < 0)
         puts("Send failed");
 }

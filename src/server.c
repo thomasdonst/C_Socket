@@ -13,8 +13,8 @@
 #include <sys/msg.h>
 #include <signal.h>
 
-struct sockaddr_in serverAddress;
-int serverSocket;
+struct sockaddr_in telnetServerAddress, httpServerAddress;
+int telnetServerSocket, httpServerSocket;
 int clientAddressLength;
 
 struct sockaddr_in clientAddress;
@@ -31,47 +31,37 @@ void initializeSignals() {
     signal(SIGCHLD, SIG_IGN);
 }
 
-void initializeServerSocket() {
-    // define type of server socket
-    serverAddress.sin_family = AF_INET; // AF_INET = IPv4
-    serverAddress.sin_addr.s_addr = INADDR_ANY; // INADDR_ANY = socket will be bound to all interfaces
-    serverAddress.sin_port = htons(PORT);
-
-    // create server socket
-    if ((serverSocket = socket(AF_INET, SOCK_STREAM, 0)) == 0) { // SOCK_STREAM = TCP
-        showErrorMessage("Server socket can not be initialized");
-        exit(EXIT_FAILURE);
-    }
-
-    // The purpose of this is to allow to reuse the port even if the process crash or been killed
-    if (setsockopt(serverSocket, SOL_SOCKET, SO_REUSEADDR, &(int) {1}, sizeof(int)) < 0) {
-        showErrorMessage("setsockopt(SO_REUSEADDR) failed");
-        exit(EXIT_FAILURE);
-    }
-
-    // bind server socket to ip address and port
-    if (bind(serverSocket, (struct sockaddr *) &serverAddress, sizeof(serverAddress))) {
-        showErrorMessage("Server socket bind failed");
-        exit(EXIT_FAILURE);
-    }
-
-    // try to specify maximum of X pending connections for server socket
-    if (listen(serverSocket, MAX_PENDING_CONNECTIONS) != 0) {
-        showErrorMessage("Server socket can not listen");
-        exit(EXIT_FAILURE);
-    }
-
-    // show notification
-    char info[255];
-    sprintf(info, "Server started %s:%d\r\nWaiting for clients to connect ...",
-            inet_ntoa(serverAddress.sin_addr), ntohs(serverAddress.sin_port));
-    showMessage(info);
+void initializeServerSockets() {
+    telnetServerSocket = createServerSocket("telnet", telnetServerAddress, TELNET_PORT);
+    httpServerSocket = createServerSocket("http", httpServerAddress, HTTP_PORT);
+    showMessage("Waiting for clients to connect ...");
 }
 
-
 void handleClientConnection() {
+    int pid = fork();
+    if (pid == -1) {
+        showErrorMessage("Could not fork process");
+        exit(EXIT_FAILURE);
+    }
+
+    if (pid > 0) {
+        acceptTelnetClientConnection();
+        attachClientToSharedMemories();
+        serveTelnetClient();
+    }
+    else {
+        acceptHttpClientConnection();
+        attachClientToSharedMemories();
+        serveHttpClient();
+    }
+}
+
+void acceptTelnetClientConnection() {
     while (1) {
-        acceptClientConnection();
+        if ((clientSocket = accept(telnetServerSocket, &clientAddress, &clientAddressLength)) < 0) {
+            showMessage("Telnet port closed");
+            exit(0);
+        }
 
         currentClientNumber++;
         showClientMessage("Client accepted");
@@ -88,11 +78,69 @@ void handleClientConnection() {
     }
 }
 
-void acceptClientConnection() {
-    if ((clientSocket = accept(serverSocket, &clientAddress, &clientAddressLength)) < 0) {
-        showMessage("Server closed");
-        exit(0);
+void acceptHttpClientConnection() {
+    while (1) {
+        if ((clientSocket = accept(httpServerSocket, &clientAddress, &clientAddressLength)) < 0) {
+            showMessage("Http port closed");
+            exit(0);
+        }
+
+        printf("[Http client] Client connected\n");
+        char *responseHeader = "HTTP/1.1 200 OK\n\n";
+        send(clientSocket, responseHeader, strlen(responseHeader), 0);
+
+        int pid = fork();
+        if (pid == -1) {
+            showErrorMessage("Could not fork process");
+            exit(EXIT_FAILURE);
+        }
+        if (pid == 0)
+            break;
+
+        closeClientSocket();
     }
+}
+
+void serveTelnetClient() {
+    const int RESULT_BUFFER = KEY_VALUE_STORE_SIZE *
+                              (COUNT_OF_COMMAND_ARGUMENTS *
+                               MAX_ARGUMENT_LENGTH + ADDITIONAL_SPACE);
+    int disconnectionStatus;
+    Command command;
+    char message[MESSAGE_BUFFER];
+    char result[RESULT_BUFFER];
+
+    listenSubscriberNotifications();
+    greetClient();
+
+    while (1) {
+        disconnectionStatus = receiveMessage(message);
+        showClientMessage(message);
+
+        command = parseCommand(message);
+        processCommand(command, result);
+
+        showClientMessage(result);
+        sendMessageToClient(result);
+
+        if (hasClientQuit(command.type, disconnectionStatus) == 1) {
+            showDisconnectionStatus(disconnectionStatus);
+            handleInterrupt();
+            kill(getpid() + 1, SIGKILL);
+            return;
+        }
+    }
+}
+
+void serveHttpClient() {
+    char message[MESSAGE_BUFFER];
+    message[0] = '\0';
+    receiveMessage(message);
+    sendMessageToClient(message);
+
+    message[0] = '\0';
+    receiveMessage(message);
+    send(clientSocket, message, strlen(message), 0);
 }
 
 void greetClient() {
@@ -100,7 +148,7 @@ void greetClient() {
                         "SUB [key]\r\nUNSUB [key]\r\nOP [key] [sys_call]\r\nSHOW\r\nBEG\r\nEND\r\nQUIT\r\n");
 }
 
-void handleSubscriberNotifications() {
+void listenSubscriberNotifications() {
     int pid = fork();
     if (pid == -1) {
         showErrorMessage("Could not fork process");
@@ -112,9 +160,10 @@ void handleSubscriberNotifications() {
     while (1) {
         Message message;
         if (msgrcv(messageQueue, &message, PAYLOAD_LENGTH, getppid(), 0) < 0) {
-            return;
+            exit(0);
         }
 
+        puts("test\n");
         sendMessageToClient(message.payload);
     }
 }
@@ -140,7 +189,7 @@ int receiveMessage(char *message) {
 
         if (receivedBytes >= 2) {
             sprintf(message, "%s", input);
-            message[receivedBytes - 1] = '\0';
+            message[receivedBytes] = '\0';
             return receivedBytes;
         }
         else {
@@ -188,7 +237,7 @@ void showClientMessage(char *message) {
     char clientString[KEY_VALUE_STORE_SIZE *
                       (COUNT_OF_COMMAND_ARGUMENTS * MAX_ARGUMENT_LENGTH + ADDITIONAL_SPACE)];
     clientString[0] = '\0';
-    sprintf(clientString, "[Client %d] ", currentClientNumber);
+    sprintf(clientString, "[Telnet client %d] ", currentClientNumber);
     strcat(clientString, message);
     puts(clientString);
 }
@@ -197,8 +246,50 @@ void showErrorMessage(char *message) {
     perror(message);
 }
 
-void closeServerSocket() {
-    close(serverSocket);
+int createServerSocket(char *protocol, struct sockaddr_in address, int port) {
+    int fileDescriptor;
+
+    // define type of server socket
+    address.sin_family = AF_INET;
+    address.sin_port = htons(port);
+    address.sin_addr.s_addr = INADDR_ANY;
+
+    // create server socket
+    if ((fileDescriptor = socket(AF_INET, SOCK_STREAM, 0)) == 0) { // SOCK_STREAM = TCP
+        showErrorMessage("Server socket can not be initialized");
+        exit(EXIT_FAILURE);
+    }
+
+    // The purpose of this is to allow to reuse the port even if the process crash or been killed
+    if (setsockopt(fileDescriptor, SOL_SOCKET, SO_REUSEADDR, &(int) {1}, sizeof(int)) < 0) {
+        showErrorMessage("setsockopt(SO_REUSEADDR) failed");
+        exit(EXIT_FAILURE);
+    }
+
+    // bind server filediscriptor to ip address and port
+    if (bind(fileDescriptor, (struct sockaddr *) &address, sizeof(address))) {
+        showErrorMessage("Server socket bind failed");
+        exit(EXIT_FAILURE);
+    }
+
+    // try to specify maximum of X pending connections for server filediscriptor
+    if (listen(fileDescriptor, MAX_PENDING_CONNECTIONS) != 0) {
+        showErrorMessage("Server socket can not listen");
+        exit(EXIT_FAILURE);
+    }
+
+    // show notification
+    char info[255];
+    sprintf(info, "Opened %s on %s:%d",
+            protocol, inet_ntoa(address.sin_addr), ntohs(address.sin_port));
+    showMessage(info);
+
+    return fileDescriptor;
+}
+
+void closeServerSockets() {
+    close(telnetServerSocket);
+    close(httpServerSocket);
 }
 
 void closeClientSocket() {
@@ -212,7 +303,7 @@ void handleInterrupt() {
     }
 
     closeClientSocket();
-    closeServerSocket();
+    closeServerSockets();
     resolveExclusiveAccess();
     closeSharedMemories();
 }

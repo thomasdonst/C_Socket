@@ -111,23 +111,15 @@ void handleGet(Command command, char *result) {
         return;
     }
 
-    if (hasWildCard(command.key) == 1) {
-        sem_t *semaphor = sem_open(command.type, O_CREAT, 0777, 1);
-        sem_wait(semaphor);
+    sem_t *keySemaphor = sem_open(command.key, O_CREAT, 0777, 1);
+    sem_wait(keySemaphor);
 
+    if (hasWildCard(command.key) == 1)
         getWithWildCard(command.key, result); // Critical section
-
-        sem_post(semaphor);
-    }
-    else {
-        sem_t *keySemaphor = sem_open(command.key, O_CREAT, 0777, 1);
-        sem_wait(keySemaphor);
-
+    else
         get(command.key, result); // Critical section
 
-        sem_post(keySemaphor);
-    }
-
+    sem_post(keySemaphor);
 }
 
 void handlePut(Command command, char *result) {
