@@ -13,8 +13,6 @@
 #include <sys/msg.h>
 #include <signal.h>
 
-#include <time.h>
-
 struct sockaddr_in telnetServerAddress, httpServerAddress;
 int telnetServerSocket, httpServerSocket;
 int clientAddressLength;
@@ -62,7 +60,6 @@ void acceptTelnetClientConnection() {
     while (1) {
         if ((clientSocket = accept(telnetServerSocket, &clientAddress, &clientAddressLength)) < 0) {
             showMessage("Telnet port closed");
-
             exit(0);
         }
 
@@ -88,10 +85,6 @@ void acceptHttpClientConnection() {
             exit(0);
         }
 
-//        printf("[Http client] Client connected\n");
-
-
-
         int pid = fork();
         if (pid == -1) {
             showErrorMessage("Could not fork process");
@@ -102,7 +95,6 @@ void acceptHttpClientConnection() {
 
         closeClientSocket();
     }
-
 }
 
 void serveTelnetClient() {
@@ -121,7 +113,7 @@ void serveTelnetClient() {
         disconnectionStatus = receiveMessage(message);
         showClientMessage(message);
 
-        command = parseCommand(message);
+        command = parseTelnetCommand(message);
         processCommand(command, result);
 
         showClientMessage(result);
@@ -137,126 +129,32 @@ void serveTelnetClient() {
 }
 
 void serveHttpClient() {
-    //CLIENT ADDRESS IN STR
     const int RESULT_BUFFER = KEY_VALUE_STORE_SIZE *
                               (COUNT_OF_COMMAND_ARGUMENTS *
                                MAX_ARGUMENT_LENGTH + ADDITIONAL_SPACE);
-    struct sockaddr_in* pV4Addr = (struct sockaddr_in*)&clientAddress;
-    struct in_addr ipAddr = pV4Addr->sin_addr;
-    char str[INET_ADDRSTRLEN];
-    Command command;
     char result[RESULT_BUFFER];
     char request[MESSAGE_BUFFER];
-    request[0] = '\0';
+
     receiveMessage(request);
 
     char *responseHeader = "HTTP/1.1 200 OK\n\n";
     send(clientSocket, responseHeader, strlen(responseHeader), 0);
+    printf("[Http client] Client connected\n");
 
-    char to_findhttp[] = "HTTP/1.1";
-    char to_findSlash[] = "/";
-    char to_findValue[] = "value=";
-    char* res = strstr(request,to_findhttp);
-    char* methodRes = strstr(request, to_findSlash);
-    char* pathRes = strstr(res,to_findhttp);
+    Command command = parseHttpCommand(request);
 
-    char requestStr[strlen(request)-strlen(res)];
-    char requestMethod[strlen(request)-strlen(methodRes)];
-    char requestPath[strlen(methodRes)- strlen(pathRes)];
+    if (isValidCommand(command, (Command) {"GET", "", ""}))
+        sprintf(command.type, "%s", "SHOW");
 
+    if (isValidCommand(command, (Command) {"DELETE", "!", ""}))
+        sprintf(command.type, "%s", "DEL");
 
+    processCommand(command, result);
 
-    if(res){
-
-        for (int i = 0; i < strlen(request)- strlen(res)-1; ++i) {
-            requestStr[i] = request[i];
-        }
-
-        for (int i = 0; i < strlen(request) - strlen(methodRes)-1; ++i) {
-            requestMethod[i] = request[i];
-        }
-
-        for (int i = 0; i < strlen(methodRes)- strlen(pathRes)-1; ++i) {
-            requestPath[i] = methodRes[i];
-        }
-
-        requestStr[sizeof(requestStr)-1] = '\0';
-        requestMethod[sizeof (requestMethod)-1] = '\0';
-        requestPath[sizeof (requestPath)-1] = '\0';
-
-        time_t t = time(NULL);
-        struct tm tm = *localtime(&t);
-
-        if(strcmp(requestMethod,"GET") == 0){
-
-            char reqKey[strlen(requestPath)];
-
-            for (int i = 0; i < strlen(requestPath)-1; ++i) {
-                reqKey[i] = requestPath[i+1];
-
-            }
-
-            reqKey[sizeof (reqKey)-1] = '\0';
-
-            Command command1 = {"get", "", ""};
-            sprintf(command1.key, "%s",reqKey);
-
-            processCommand(command1,result);
-            showClientMessage(result);
-            sendMessageToClient(result);
-
-        }else if(strcmp(requestMethod,"PUT") == 0){
-            char * paramRes = strstr(requestStr,to_findValue);
-            char requestParam[strlen(paramRes)-5];
-
-            for (int i = 0; i < strlen(paramRes)-6; ++i) {
-                requestParam[i] = paramRes[i+6];
-            }
-            requestParam[sizeof (requestParam)-1] = '\0';
-
-            char reqKey[strlen(requestPath) - strlen(requestParam) - 7];
-
-            for (int i = 0; i < strlen(requestPath) - strlen(requestParam) - 8; ++i) {
-
-                reqKey[i] = requestPath[i+1];
-            }
-
-            reqKey[sizeof (reqKey)-1] = '\0';
-            Command command1 = {"put", "", ""};
-            sprintf(command1.key, "%s",reqKey);
-            sprintf(command1.value,"%s",requestParam);
-
-            processCommand(command1,result);
-
-            showClientMessage(result);
-            sendMessageToClient(result);
-        }else if(strcmp(requestMethod,"DELETE") == 0){
-            char reqKey[strlen(requestPath)];
-
-            for (int i = 0; i < strlen(requestPath)-1; ++i) {
-                reqKey[i] = requestPath[i+1];
-
-            }
-            reqKey[sizeof (reqKey)-1] = '\0';
-
-            Command command1 = {"del", "", ""};
-            sprintf(command1.key, "%s",reqKey);
-
-            processCommand(command1,result);
-            showClientMessage(result);
-            sendMessageToClient(result);
-        }
-        printf("\n%s - - [%02d/%02d/%d %02d:%02d:%02d] \"%s HTTP/1.1\" 200  \n",inet_ntop( AF_INET, &ipAddr, str, INET_ADDRSTRLEN ),tm.tm_mday, tm.tm_mon + 1,tm.tm_year + 1900,  tm.tm_hour+3, tm.tm_min, tm.tm_sec,requestStr);
-
-//        sendMessageToClient("{\"test\":\"message\"}");
-    }
-
-
-
+    showClientMessage(result);
+    sendMessageToClient(result);
 
     closeClientSocket();
-
-
 }
 
 void greetClient() {

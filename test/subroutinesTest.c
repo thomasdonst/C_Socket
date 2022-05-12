@@ -19,77 +19,77 @@ MU_TEST(parseCommandTests) {
 
     strcpy(message, "");
     expectedCommand = (Command) {"", "", ""};
-    command = parseCommand(message);
+    command = parseTelnetCommand(message);
     mu_assert_string_eq(expectedCommand.type, command.type);
     mu_assert_string_eq(expectedCommand.key, command.key);
     mu_assert_string_eq(expectedCommand.value, command.value);
 
     strcpy(message, " ");
     expectedCommand = (Command) {"", "", ""};
-    command = parseCommand(message);
+    command = parseTelnetCommand(message);
     mu_assert_string_eq(expectedCommand.type, command.type);
     mu_assert_string_eq(expectedCommand.key, command.key);
     mu_assert_string_eq(expectedCommand.value, command.value);
 
     strcpy(message, "   ");
     expectedCommand = (Command) {"", "", ""};
-    command = parseCommand(message);
+    command = parseTelnetCommand(message);
     mu_assert_string_eq(expectedCommand.type, command.type);
     mu_assert_string_eq(expectedCommand.key, command.key);
     mu_assert_string_eq(expectedCommand.value, command.value);
 
     strcpy(message, "  A B C ");
     expectedCommand = (Command) {"A", "B", "C"};
-    command = parseCommand(message);
+    command = parseTelnetCommand(message);
     mu_assert_string_eq(expectedCommand.type, command.type);
     mu_assert_string_eq(expectedCommand.key, command.key);
     mu_assert_string_eq(expectedCommand.value, command.value);
 
     strcpy(message, "A \0 B C ");
     expectedCommand = (Command) {"A", "", ""};
-    command = parseCommand(message);
+    command = parseTelnetCommand(message);
     mu_assert_string_eq(expectedCommand.type, command.type);
     mu_assert_string_eq(expectedCommand.key, command.key);
     mu_assert_string_eq(expectedCommand.value, command.value);
 
     strcpy(message, "AAA    B C  D");
     expectedCommand = (Command) {"AAA", "B", "C  D"};
-    command = parseCommand(message);
+    command = parseTelnetCommand(message);
     mu_assert_string_eq(expectedCommand.type, command.type);
     mu_assert_string_eq(expectedCommand.key, command.key);
     mu_assert_string_eq(expectedCommand.value, command.value);
 
     strcpy(message, "A");
     expectedCommand = (Command) {"A", "", ""};
-    command = parseCommand(message);
+    command = parseTelnetCommand(message);
     mu_assert_string_eq(expectedCommand.type, command.type);
     mu_assert_string_eq(expectedCommand.key, command.key);
     mu_assert_string_eq(expectedCommand.value, command.value);
 
     strcpy(message, "PUT calculation  4 + 1  ");
     expectedCommand = (Command) {"PUT", "calculation", "4 + 1"};
-    command = parseCommand(message);
+    command = parseTelnetCommand(message);
     mu_assert_string_eq(expectedCommand.type, command.type);
     mu_assert_string_eq(expectedCommand.key, command.key);
     mu_assert_string_eq(expectedCommand.value, command.value);
 
     strcpy(message, "a a      y = 3*2 (3) +1");
     expectedCommand = (Command) {"a", "a", "y = 3*2 (3) +1"};
-    command = parseCommand(message);
+    command = parseTelnetCommand(message);
     mu_assert_string_eq(expectedCommand.type, command.type);
     mu_assert_string_eq(expectedCommand.key, command.key);
     mu_assert_string_eq(expectedCommand.value, command.value);
 
     strcpy(message, "put c 2233 / 22 * 3 - 212");
     expectedCommand = (Command) {"put", "c", "2233 / 22 * 3 - 212"};
-    command = parseCommand(message);
+    command = parseTelnetCommand(message);
     mu_assert_string_eq(expectedCommand.type, command.type);
     mu_assert_string_eq(expectedCommand.key, command.key);
     mu_assert_string_eq(expectedCommand.value, command.value);
 
     strcpy(message, "put / 33 2 3");
     expectedCommand = (Command) {"put", "/", "33 2 3"};
-    command = parseCommand(message);
+    command = parseTelnetCommand(message);
     mu_assert_string_eq(expectedCommand.type, command.type);
     mu_assert_string_eq(expectedCommand.key, command.key);
     mu_assert_string_eq(expectedCommand.value, command.value);

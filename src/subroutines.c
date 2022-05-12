@@ -8,7 +8,7 @@
 #include <semaphore.h>
 #include <fcntl.h>
 
-Command parseCommand(char *message) {
+Command parseTelnetCommand(char *message) {
     Command command = {"", "", ""};
     if (strcmp(message, "") == 0)
         return command;
@@ -42,6 +42,37 @@ Command parseCommand(char *message) {
     return command;
 }
 
+
+Command parseHttpCommand(char *message) {
+    Command command = (Command) {"", "", ""};
+
+    char tmp[255];
+    tmp[0] = '\0';
+
+    int length = 7;
+
+    char messageCopy[MESSAGE_BUFFER];
+    messageCopy[0] = '\0';
+    sprintf(messageCopy, "%s", message);
+    char *token;
+    char *rest = messageCopy;
+
+    token = strtok_r(rest, "\r", &rest);
+    token = strtok_r(token, " ", &rest);
+    sprintf(command.type, "%s", token);
+
+    token = strtok_r(rest, " ", &rest);
+    substring(token, tmp, length, strlen(token) - length + 1);
+    token = strtok_r(tmp, "?", &rest);
+    if (token != NULL)
+        sprintf(command.key, "%s", token);
+
+    tmp[0] = '\0';
+    substring(rest, tmp, length, strlen(rest) - length + 1);
+    sprintf(command.value, "%s", tmp);
+
+    return command;
+}
 
 void processCommand(Command command, char *result) {
     if (hasAccess() == 0 && strcmp(command.type, "quit") != 0) {
@@ -203,6 +234,16 @@ void handleUnsub(Command command, char *result) {
 
 void handleOp(Command command, char *result) {
     op(command, result);
+}
+
+void substring(char s[], char sub[], int p, int l) {
+    int c = 0;
+
+    while (c < l) {
+        sub[c] = s[p + c - 1];
+        c++;
+    }
+    sub[c] = '\0';
 }
 
 int containsOnlySpaceCharacters(char *string) {
