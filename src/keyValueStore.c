@@ -124,7 +124,7 @@ void loadKeyValueStore() {
     int counter = 0;
     Command command;
     while (getline(&line, &len, fp) != -1) {
-        command = parseCommand(line);
+        command = parseTelnetCommand(line);
         sprintf(storage[counter].key, "%s", command.key);
         sprintf(storage[counter].value, "%s", command.value);
 

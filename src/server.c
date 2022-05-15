@@ -85,10 +85,6 @@ void acceptHttpClientConnection() {
             exit(0);
         }
 
-        printf("[Http client] Client connected\n");
-        char *responseHeader = "HTTP/1.1 200 OK\n\n";
-        send(clientSocket, responseHeader, strlen(responseHeader), 0);
-
         int pid = fork();
         if (pid == -1) {
             showErrorMessage("Could not fork process");
@@ -117,7 +113,7 @@ void serveTelnetClient() {
         disconnectionStatus = receiveMessage(message);
         showClientMessage(message);
 
-        command = parseCommand(message);
+        command = parseTelnetCommand(message);
         processCommand(command, result);
 
         showClientMessage(result);
@@ -133,14 +129,32 @@ void serveTelnetClient() {
 }
 
 void serveHttpClient() {
-    char message[MESSAGE_BUFFER];
-    message[0] = '\0';
-    receiveMessage(message);
-    sendMessageToClient(message);
+    const int RESULT_BUFFER = KEY_VALUE_STORE_SIZE *
+                              (COUNT_OF_COMMAND_ARGUMENTS *
+                               MAX_ARGUMENT_LENGTH + ADDITIONAL_SPACE);
+    char result[RESULT_BUFFER];
+    char request[MESSAGE_BUFFER];
 
-    message[0] = '\0';
-    receiveMessage(message);
-    send(clientSocket, message, strlen(message), 0);
+    receiveMessage(request);
+
+    char *responseHeader = "HTTP/1.1 200 OK\n\n";
+    send(clientSocket, responseHeader, strlen(responseHeader), 0);
+    printf("[Http client] Client connected\n");
+
+    Command command = parseHttpCommand(request);
+
+    if (isValidCommand(command, (Command) {"GET", "", ""}))
+        sprintf(command.type, "%s", "SHOW");
+
+    if (isValidCommand(command, (Command) {"DELETE", "!", ""}))
+        sprintf(command.type, "%s", "DEL");
+
+    processCommand(command, result);
+
+    showClientMessage(result);
+    sendMessageToClient(result);
+
+    closeClientSocket();
 }
 
 void greetClient() {

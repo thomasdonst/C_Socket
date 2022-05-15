@@ -13,7 +13,8 @@ typedef struct Command_{
 } Command;
 
 
-Command parseCommand(char *message);
+Command parseTelnetCommand(char *message);
+Command parseHttpCommand(char *message);
 void processCommand(Command command, char *result);
 int containsOnlySpaceCharacters(char *string);
 void toLower(char *string);
@@ -21,6 +22,7 @@ int containsSlash(char *string);
 char *trim(char *string);
 int hasAccess();
 int isValidCommand(Command is, Command should);
+void substring(char s[], char sub[], int p, int l);
 
 void handleGet(Command command, char *result);
 void handlePut(Command command, char *result);
