@@ -24,17 +24,17 @@ Command parseTelnetCommand(char *message) {
 
     char *rest = messageCopy;
 
-    // fetch command type
+    // parse command type
     strncpy(command.type, strtok_r(rest, delimiter, &rest), MAX_ARGUMENT_LENGTH);
     command.type[MAX_ARGUMENT_LENGTH - 1] = '\0';
 
-    // fetch command key
+    // parse command key
     if ((token = strtok_r(rest, delimiter, &rest)) != NULL) {
         strncpy(command.key, token, MAX_ARGUMENT_LENGTH);
         command.key[MAX_ARGUMENT_LENGTH - 1] = '\0';
     }
 
-    // fetch command value
+    // parse command value
     char *trimmedValue = trim(rest);
     strncpy(command.value, trimmedValue, MAX_ARGUMENT_LENGTH);
     command.value[MAX_ARGUMENT_LENGTH - 1] = '\0';
@@ -100,7 +100,7 @@ void processCommand(Command command, char *result) {
     }
 
     if (isValidCommand(command, (Command) {"show", "", ""})) {
-        handleShow(command, result);
+        handleShow(result);
         return;
     }
 
@@ -142,15 +142,15 @@ void handleGet(Command command, char *result) {
         return;
     }
 
-    sem_t *keySemaphor = sem_open(command.key, O_CREAT, 0777, 1);
-    sem_wait(keySemaphor);
+    sem_t *semaphor = sem_open("keyValueStore", O_CREAT, 0777, 1);
+    sem_wait(semaphor);
 
     if (hasWildCard(command.key) == 1)
         getWithWildCard(command.key, result); // Critical section
     else
         get(command.key, result); // Critical section
 
-    sem_post(keySemaphor);
+    sem_post(semaphor);
 }
 
 void handlePut(Command command, char *result) {
@@ -159,12 +159,12 @@ void handlePut(Command command, char *result) {
         return;
     }
 
-    sem_t *keySemaphor = sem_open(command.key, O_CREAT, 0777, 1);
-    sem_wait(keySemaphor);
+    sem_t *semaphor = sem_open("keyValueStore", O_CREAT, 0777, 1);
+    sem_wait(semaphor);
 
     int keyModified = put(command.key, command.value, result); // Critical section
 
-    sem_post(keySemaphor);
+    sem_post(semaphor);
 
     if (keyModified == 1)
         notifySubscribers(command.key, result);
@@ -176,19 +176,19 @@ void handleDel(Command command, char *result) {
         return;
     }
 
-    sem_t *keySemaphor = sem_open(command.key, O_CREAT, 0777, 1);
-    sem_wait(keySemaphor);
+    sem_t *semaphor = sem_open("keyValueStore", O_CREAT, 0777, 1);
+    sem_wait(semaphor);
 
     int keyDeleted = del(command.key, result); // Critical section
 
-    sem_post(keySemaphor);
+    sem_post(semaphor);
 
     if (keyDeleted == 1)
         notifySubscribers(command.key, result);
 }
 
-void handleShow(Command command, char *result) {
-    sem_t *semaphor = sem_open(command.type, O_CREAT, 0777, 1);
+void handleShow(char *result) {
+    sem_t *semaphor = sem_open("keyValueStore", O_CREAT, 0777, 1);
     sem_wait(semaphor);
 
     show(result); // Critical section

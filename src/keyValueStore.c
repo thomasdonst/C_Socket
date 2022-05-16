@@ -106,12 +106,8 @@ int keyValueStoreExists() {
 
 void loadKeyValueStore() {
     FILE *fp;
-    if (!keyValueStoreExists(RESTORE_FILE_NAME)) {
-        if ((fp = fopen(RESTORE_FILE_NAME, "a")) == NULL)
-            printf("Unable to create %s", RESTORE_FILE_NAME);
-        fclose(fp);
+    if (!keyValueStoreExists(RESTORE_FILE_NAME))
         return;
-    }
 
     char *line = NULL;
     size_t len = 0;

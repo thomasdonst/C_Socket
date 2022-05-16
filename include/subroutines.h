@@ -27,7 +27,7 @@ void substring(char s[], char sub[], int p, int l);
 void handleGet(Command command, char *result);
 void handlePut(Command command, char *result);
 void handleDel(Command command, char *result);
-void handleShow(Command command, char *result);
+void handleShow(char *result);
 void handleBeg(char *result);
 void handleEnd(char *result);
 void handleSub(Command command, char *result);
