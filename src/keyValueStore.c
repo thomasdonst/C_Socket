@@ -247,6 +247,38 @@ int del(char *key, char *result) {
     return 0;
 }
 
+int delWithWildCard(char *key, char *result){
+    char tmp[KEY_VALUE_STORE_SIZE *
+             (COUNT_OF_COMMAND_ARGUMENTS * MAX_ARGUMENT_LENGTH + ADDITIONAL_SPACE)];
+    char message[KEY_VALUE_STORE_SIZE *
+                 (COUNT_OF_COMMAND_ARGUMENTS * MAX_ARGUMENT_LENGTH + ADDITIONAL_SPACE)];
+
+    tmp[0] = '\0';
+    message[0] = '\0';
+
+    int counter = 0;
+    for (int i = 0; i < KEY_VALUE_STORE_SIZE; i++) {
+        if (matchWildCard(key, storage[i].key) == 1 && strcmp("", storage[i].key) != 0) {
+            sprintf(tmp, "> DEL:%s:key_deleted\r\n", key);
+            strcat(message, tmp);
+
+            sprintf(storage[i].key, "%s", "");
+            sprintf(storage[i].value, "%s", "");
+
+            counter++;
+        }
+    }
+
+    if (counter > 0) {
+        message[strlen(message) - 2] = '\0';
+        sprintf(result, "%s", message);
+        return 1;
+    }
+
+    sprintf(result, "> DEL:%s:key_nonexistent", key);
+    return 0;
+}
+
 void show(char *result) {
     char tmp[KEY_VALUE_STORE_SIZE *
              (COUNT_OF_COMMAND_ARGUMENTS * MAX_ARGUMENT_LENGTH + ADDITIONAL_SPACE)];

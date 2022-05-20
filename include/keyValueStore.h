@@ -40,6 +40,7 @@ void get(char *key, char *result);
 void getWithWildCard(char *key, char *result);
 int put(char *key, char *value, char *result);
 int del(char *key, char *result);
+int delWithWildCard(char *key, char *result);
 void show(char *result);
 void beg(char *result);
 void end(char *result);

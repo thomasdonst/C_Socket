@@ -176,10 +176,14 @@ void handleDel(Command command, char *result) {
         return;
     }
 
+    int keyDeleted;
     sem_t *semaphor = sem_open("keyValueStore", O_CREAT, 0777, 1);
     sem_wait(semaphor);
 
-    int keyDeleted = del(command.key, result); // Critical section
+    if (hasWildCard(command.key) == 1)
+        keyDeleted = delWithWildCard(command.key, result); // Critical section
+    else
+        keyDeleted = del(command.key, result); // Critical section
 
     sem_post(semaphor);
 
